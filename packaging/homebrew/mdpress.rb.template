@@ -1,0 +1,24 @@
+class Mdpress < Formula
+  desc "Impagina Markdown in PDF e DOCX con template personalizzabili"
+  homepage "https://github.com/pietrax/mdpress"
+  url "https://github.com/pietrax/mdpress/releases/download/v__VERSION__/mdpress-__VERSION__.tar.gz"
+  sha256 "__SHA256__"
+  license "MIT"
+
+  depends_on "node"
+  depends_on "pandoc"
+  depends_on "typst"
+
+  def install
+    libexec.install Dir["*"]
+    (bin/"mdpress").write_env_script libexec/"bin/mdpress.js", PATH: "#{Formula["node"].opt_bin}:$PATH"
+  end
+
+  test do
+    system bin/"mdpress", "doctor"
+    (testpath/"prova.md").write("---\ntitle: Prova\n---\n\n# Ciao\n\nTesto.\n")
+    system bin/"mdpress", "render", testpath/"prova.md", "-f", "pdf,docx"
+    assert_path_exists testpath/"prova.pdf"
+    assert_path_exists testpath/"prova.docx"
+  end
+end
