@@ -77,6 +77,13 @@ describe('detectLanguage', () => {
   it('ignores unsupported config and env values', () => {
     expect(detectLanguage({ config: 'fr', env: { LANG: 'de_DE' } })).toBe('en');
   });
+  it('normalizes the flag', () => {
+    expect(detectLanguage({ flag: 'IT', env: {} })).toBe('it');
+    expect(detectLanguage({ flag: 'it-IT', env: {} })).toBe('it');
+  });
+  it('rejects an empty flag', () => {
+    expect(() => detectLanguage({ flag: '', env: {} })).toThrow(UnsupportedLanguageError);
+  });
   it('rejects an unsupported flag', () => {
     expect(() => detectLanguage({ flag: 'fr', env: {} })).toThrow(UnsupportedLanguageError);
   });

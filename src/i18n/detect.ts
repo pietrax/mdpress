@@ -16,8 +16,9 @@ export interface LanguageSources {
 /** App language: --lang flag, then config.json, then LC_ALL / LC_MESSAGES / LANG, then English. */
 export function detectLanguage({ flag, config, env = {} }: LanguageSources): Language {
   if (flag !== undefined) {
-    if (!isLanguage(flag)) throw new UnsupportedLanguageError(flag);
-    return flag;
+    const lang = normalizeLanguage(flag);
+    if (!lang) throw new UnsupportedLanguageError(flag);
+    return lang;
   }
   if (isLanguage(config)) return config;
   for (const name of ['LC_ALL', 'LC_MESSAGES', 'LANG']) {

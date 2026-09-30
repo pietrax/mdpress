@@ -7,7 +7,8 @@ import { fileURLToPath } from 'node:url';
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const DEFAULT_PATHS = [
   'src', 'web/src', 'web/index.html', 'tests', 'assets', 'scripts', 'templates',
-  'packaging', '.github', 'README.md', 'package.json',
+  'packaging', '.github', 'README.md', 'package.json', 'bin', 'vite.config.ts', 'vitest.config.ts',
+  'tsconfig.json', 'tsconfig.build.json', 'web/tsconfig.json',
 ];
 const EXCLUDED = new Set(['src/i18n/locales/it.json', 'scripts/check-no-italian.mjs']);
 const SKIPPED_DIRS = new Set(['node_modules', 'dist', '.git']);

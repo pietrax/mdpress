@@ -29,9 +29,24 @@ describe('collectWarnings', () => {
     const pandoc =
       '[WARNING] Could not fetch resource x.png: replacing image with description\n' +
       'mdpress:image-not-found:y.png\nmdpress:image-unreachable:http://h/z.png\n';
+    const all = collectWarnings(typst, pandoc);
+    expect(all.filter((w) => w.key === 'warnings.tool')).toHaveLength(1);
     expect(collectWarnings(typst, pandoc)).toEqual([
       { key: 'warnings.fontMissing', params: { font: 'inter' } },
       { key: 'warnings.tool', params: { details: 'Could not fetch resource x.png: replacing image with description' } },
+      { key: 'warnings.imageNotFound', params: { src: 'y.png' } },
+      { key: 'warnings.imageUnreachable', params: { src: 'http://h/z.png' } },
+    ]);
+  });
+
+  it('drops pandoc "Could not fetch resource" when the image filter already reported that src', () => {
+    const pandoc =
+      '[WARNING] Could not fetch resource y.png: replacing image with description\n' +
+      '[WARNING] Could not fetch resource http://h/z.png\n' +
+      '[WARNING] Could not fetch resource other.png\n' +
+      'mdpress:image-not-found:y.png\nmdpress:image-unreachable: http://h/z.png \n';
+    expect(collectWarnings(pandoc)).toEqual([
+      { key: 'warnings.tool', params: { details: 'Could not fetch resource other.png' } },
       { key: 'warnings.imageNotFound', params: { src: 'y.png' } },
       { key: 'warnings.imageUnreachable', params: { src: 'http://h/z.png' } },
     ]);
@@ -171,15 +186,19 @@ describe.runIf(hasTools)('render with pandoc and typst', () => {
 
   it('the table of contents title follows the template language', async () => {
     await catalog.create({ slug: 'italian', name: 'Italian', language: 'it' });
-    const it = await renderFile(join(dir, 'doc.md'), { templateRef: 'italian', formats: ['docx'], overrides: { toc: true }, output: join(dir, 'out', 'toc-it'), catalog });
-    expect(await unzipText(await readFile(it.outputs[0]), 'word/document.xml')).toContain(t('document.tocTitle', {}, 'it'));
-    const en = await renderFile(join(dir, 'doc.md'), { formats: ['docx'], overrides: { toc: true }, output: join(dir, 'out', 'toc-en'), catalog });
-    expect(await unzipText(await readFile(en.outputs[0]), 'word/document.xml')).toContain('Contents');
+    const itDoc = await renderFile(join(dir, 'doc.md'), { templateRef: 'italian', formats: ['docx'], overrides: { toc: true }, output: join(dir, 'out', 'toc-it'), catalog });
+    const itXml = await unzipText(await readFile(itDoc.outputs[0]), 'word/document.xml');
+    expect(itXml).toContain('>' + t('document.tocTitle', {}, 'it') + '</w:t>');
+    expect(itXml).not.toContain('>Contents</w:t>');
+    const enDoc = await renderFile(join(dir, 'doc.md'), { formats: ['docx'], overrides: { toc: true }, output: join(dir, 'out', 'toc-en'), catalog });
+    const enXml = await unzipText(await readFile(enDoc.outputs[0]), 'word/document.xml');
+    expect(enXml).toContain('>Contents</w:t>');
+    expect(enXml).not.toContain('>' + t('document.tocTitle', {}, 'it') + '<');
   });
 
   it('renderSample produces the PNG thumbnail', async () => {
-    const t = parseTemplate({ id: 'abcd1234', slug: 'p', name: 'P' });
-    const png = await renderSample(t, null, 'png');
+    const tpl = parseTemplate({ id: 'abcd1234', slug: 'p', name: 'P' });
+    const png = await renderSample(tpl, null, 'png');
     expect(png.subarray(0, 4)).toEqual(Buffer.from([0x89, 0x50, 0x4e, 0x47]));
   });
 

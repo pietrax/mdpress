@@ -19,6 +19,7 @@
     "renderFailedWorkDir": "Rendering fallito ({tool}): {details}\nCartella di lavoro: {dir}",
     "dependenciesMissing": "Dipendenze mancanti o troppo vecchie: {list}. Installa con: brew install pandoc typst",
     "unsupportedLanguage": "Lingua non supportata: {lang} (disponibili: {supported})",
+    "languageMissing": "--lang richiede un valore ({supported})",
     "portInvalid": "Porta non valida: {port}",
     "portInUse": "La porta {port} è già in uso: prova con --port {next}",
     "logoUpload": "Carica un logo PNG o JPG",
@@ -61,7 +62,25 @@
     "issueRoot": "(radice)",
     "unexpectedError": "Errore inatteso: {details}",
     "options": {
-      "lang": "lingua dell’interfaccia (en, it)"
+      "lang": "lingua dell’interfaccia (en, it)",
+      "version": "mostra il numero di versione",
+      "help": "mostra la guida del comando",
+      "helpCommand": "mostra la guida del comando"
+    },
+    "help": {
+      "usage": "Uso:",
+      "options": "Opzioni:",
+      "globalOptions": "Opzioni globali:",
+      "commands": "Comandi:",
+      "arguments": "Argomenti:",
+      "default": "predefinito"
+    },
+    "parse": {
+      "unknownOption": "Opzione sconosciuta '{token}'",
+      "unknownCommand": "Comando sconosciuto '{token}'",
+      "missingArgument": "Argomento obbligatorio mancante '{token}'",
+      "optionMissingArgument": "L’opzione '{token}' richiede un valore",
+      "excessArguments": "Troppi argomenti per '{token}'"
     },
     "render": {
       "description": "Impagina un file Markdown",

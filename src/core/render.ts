@@ -61,7 +61,15 @@ export function collectWarnings(...stderrs: string[]): Warning[] {
       add({ key: m[1] === 'not-found' ? 'warnings.imageNotFound' : 'warnings.imageUnreachable', params: { src: m[2].trim() } });
     }
   }
-  return [...out.values()];
+  // pandoc also reports "Could not fetch resource <src>" for images the Lua filter already flagged.
+  const imageSrcs = new Set(
+    [...out.values()].filter((w) => w.key === 'warnings.imageNotFound' || w.key === 'warnings.imageUnreachable').map((w) => String(w.params?.src).trim()),
+  );
+  return [...out.values()].filter((w) => {
+    if (w.key !== 'warnings.tool') return true;
+    const m = /^Could not fetch resource (.+?)(?:: .*)?$/s.exec(String(w.params?.details).trim());
+    return !(m && imageSrcs.has(m[1].trim()));
+  });
 }
 
 function cleanStderr(stderr: string): string {

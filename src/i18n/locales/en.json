@@ -19,6 +19,7 @@
     "renderFailedWorkDir": "Rendering failed ({tool}): {details}\nWork directory: {dir}",
     "dependenciesMissing": "Missing or outdated dependencies: {list}. Install them with: brew install pandoc typst",
     "unsupportedLanguage": "Unsupported language: {lang} (supported: {supported})",
+    "languageMissing": "--lang needs a value ({supported})",
     "portInvalid": "Invalid port: {port}",
     "portInUse": "Port {port} is already in use: try --port {next}",
     "logoUpload": "Upload a PNG or JPG logo",
@@ -61,7 +62,25 @@
     "issueRoot": "(root)",
     "unexpectedError": "Unexpected error: {details}",
     "options": {
-      "lang": "interface language (en, it)"
+      "lang": "interface language (en, it)",
+      "version": "output the version number",
+      "help": "display help for command",
+      "helpCommand": "display help for command"
+    },
+    "help": {
+      "usage": "Usage:",
+      "options": "Options:",
+      "globalOptions": "Global Options:",
+      "commands": "Commands:",
+      "arguments": "Arguments:",
+      "default": "default"
+    },
+    "parse": {
+      "unknownOption": "Unknown option '{token}'",
+      "unknownCommand": "Unknown command '{token}'",
+      "missingArgument": "Missing required argument '{token}'",
+      "optionMissingArgument": "Option '{token}' needs a value",
+      "excessArguments": "Too many arguments for '{token}'"
     },
     "render": {
       "description": "Lay out a Markdown file",

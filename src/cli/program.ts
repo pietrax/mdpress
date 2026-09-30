@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { Command, CommanderError } from 'commander';
+import { Command, CommanderError, Help } from 'commander';
 import { Catalog } from '../core/catalog.js';
 import { defaultTemplateRef, readConfig, writeConfig, type Config } from '../core/config.js';
 import { checkDeps } from '../core/deps.js';
@@ -28,14 +28,47 @@ interface State {
   code: number;
 }
 
+/** Commander hardcodes its help headings and the "default:" label in English: map them here. */
+function localizedHelp(tr: (key: string) => string) {
+  const titles: Record<string, string> = {
+    'Usage:': tr('cli.help.usage'),
+    'Options:': tr('cli.help.options'),
+    'Global Options:': tr('cli.help.globalOptions'),
+    'Commands:': tr('cli.help.commands'),
+    'Arguments:': tr('cli.help.arguments'),
+  };
+  const defaults = (text: string) => text.replace(/\(default: /g, `(${tr('cli.help.default')}: `);
+  return {
+    styleTitle: (str: string) => titles[str] ?? str,
+    optionDescription(this: Help, option: Parameters<Help['optionDescription']>[0]) {
+      return defaults(Help.prototype.optionDescription.call(this, option));
+    },
+    argumentDescription(this: Help, argument: Parameters<Help['argumentDescription']>[0]) {
+      return defaults(Help.prototype.argumentDescription.call(this, argument));
+    },
+  };
+}
+
+const PARSE_ERRORS: Record<string, string> = {
+  'commander.unknownOption': 'cli.parse.unknownOption',
+  'commander.unknownCommand': 'cli.parse.unknownCommand',
+  'commander.missingArgument': 'cli.parse.missingArgument',
+  'commander.optionMissingArgument': 'cli.parse.optionMissingArgument',
+  'commander.excessArguments': 'cli.parse.excessArguments',
+};
+
 function buildProgram(io: CliIO, state: State, catalog: Catalog, lang: Language): Command {
   const tr = (key: string, params?: Params) => t(key, params, lang);
   const program = new Command('mdpress')
     .description(tr('cli.description'))
     .option('--lang <lang>', tr('cli.options.lang'))
-    .version(version)
+    .version(version, '-V, --version', tr('cli.options.version'))
+    .helpOption('-h, --help', tr('cli.options.help'))
+    .helpCommand('help [command]', tr('cli.options.helpCommand'))
     .exitOverride()
-    .configureOutput({ writeOut: (s) => io.out(s.trimEnd()), writeErr: (s) => io.err(s.trimEnd()) });
+    .configureHelp(localizedHelp(tr))
+    // Parse errors are printed by main() in the chosen language, so commander's own English line is muted.
+    .configureOutput({ writeOut: (s) => io.out(s.trimEnd()), writeErr: (s) => io.err(s.trimEnd()), outputError: () => {} });
 
   program
     .command('render <file>')
@@ -182,8 +215,12 @@ function extractLangFlag(argv: string[]): { argv: string[]; flag?: string } {
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--lang') {
-      flag = argv[i + 1] ?? '';
-      i++;
+      const next = argv[i + 1];
+      if (next === undefined || next.startsWith('-')) flag = '';
+      else {
+        flag = next;
+        i++;
+      }
     } else if (arg.startsWith('--lang=')) {
       flag = arg.slice('--lang='.length);
     } else {
@@ -207,7 +244,12 @@ export async function main(
   } catch (err) {
     if (!(err instanceof UnsupportedLanguageError)) throw err;
     const fallback = detectLanguage({ config: config.language, env });
-    io.err(t('errors.unsupportedLanguage', { lang: err.value, supported: LANGUAGES.join(', ') }, fallback));
+    const supported = LANGUAGES.join(', ');
+    io.err(
+      err.value.trim() === ''
+        ? t('errors.languageMissing', { supported }, fallback)
+        : t('errors.unsupportedLanguage', { lang: err.value, supported }, fallback),
+    );
     return 1;
   }
   const state: State = { code: 0 };
@@ -215,7 +257,11 @@ export async function main(
     await buildProgram(io, state, catalog, lang).parseAsync(args);
     return state.code;
   } catch (err) {
-    if (err instanceof CommanderError) return err.exitCode;
+    if (err instanceof CommanderError) {
+      const key = PARSE_ERRORS[err.code];
+      if (key) io.err(t(key, { token: /'([^']*)'/.exec(err.message)?.[1] ?? '' }, lang));
+      return err.exitCode;
+    }
     if (err instanceof MdpressError) {
       io.err(t('cli.errorPrefix', { message: err.localize(lang) }, lang));
       for (const issue of err.issues) io.err(`  ${issue.path || t('cli.issueRoot', {}, lang)}: ${localizeIssue(issue, lang)}`);

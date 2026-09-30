@@ -15,8 +15,8 @@ function strip(s: TemplateSummary): Template {
   return template;
 }
 
-function toMap(issues: Issue[]): Record<string, string> {
-  return Object.fromEntries(issues.map((i) => [i.path, i.message]));
+function toMap(issues: Issue[]): Record<string, Issue> {
+  return Object.fromEntries(issues.map((i) => [i.path, i]));
 }
 
 interface Props {
@@ -31,15 +31,19 @@ export function TemplateEditor({ initial, onClose, onDuplicate }: Props) {
   const [draft, setDraft] = useState<Template>(() => strip(initial));
   const [saved, setSaved] = useState<Template>(() => strip(initial));
   const [hasLogo, setHasLogo] = useState(initial.hasLogo);
-  const [previewIssues, setPreviewIssues] = useState<Record<string, string>>({});
-  const [saveIssues, setSaveIssues] = useState<Record<string, string>>({});
+  const [previewIssues, setPreviewIssues] = useState<Record<string, Issue>>({});
+  const [saveIssues, setSaveIssues] = useState<Record<string, Issue>>({});
   const issues = { ...saveIssues, ...previewIssues };
   const [message, setMessage] = useState<string | null>(null);
   const [previewUrl, setPreview] = useObjectUrl();
   const [fonts, setFonts] = useState<string[]>([]);
   const [logoVersion, setLogoVersion] = useState(() => String(Date.now()));
   const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
-  const err = (path: string) => issues[path];
+  const err = (path: string) => {
+    const issue = issues[path];
+    return issue ? (issue.key ? tr(issue.key, issue.params) : issue.message) : undefined;
+  };
+  const errors: Record<string, string> = Object.fromEntries(Object.keys(issues).map((path) => [path, err(path) ?? '']));
   const update = (fn: (d: Template) => void) => {
     setMessage(null);
     setSaveIssues({});
@@ -253,9 +257,9 @@ export function TemplateEditor({ initial, onClose, onDuplicate }: Props) {
           </Field>
 
           <h3>{tr('web.editor.header')}</h3>
-          <BandEditor value={tpl.header} hasLogo={logoAvailable} issues={issues} prefix="header" onChange={(v) => update((d) => { d.header = v; })} />
+          <BandEditor value={tpl.header} hasLogo={logoAvailable} issues={errors} prefix="header" onChange={(v) => update((d) => { d.header = v; })} />
           <h3>{tr('web.editor.footer')}</h3>
-          <BandEditor value={tpl.footer} hasLogo={logoAvailable} issues={issues} prefix="footer" onChange={(v) => update((d) => { d.footer = v; })} />
+          <BandEditor value={tpl.footer} hasLogo={logoAvailable} issues={errors} prefix="footer" onChange={(v) => update((d) => { d.footer = v; })} />
           <p className="hint">{tr('web.editor.placeholders', { list: '{title} {subtitle} {author} {date} {page} {pages}' })}</p>
 
           <h3>{tr('web.editor.cover')}</h3>

@@ -34,7 +34,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     api
       .settings()
       .then((s) => {
-        if (isLanguage(s.language)) setLangState(s.language);
+        if (!storedLanguage() && isLanguage(s.language)) setLangState(s.language);
       })
       .catch(() => {});
   }, []);

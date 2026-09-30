@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import type { FastifyInstance } from 'fastify';
 import { buildServer, startServer } from '../src/server/app.js';
 import { Catalog } from '../src/core/catalog.js';
-import { readConfig } from '../src/core/config.js';
+import { readConfig, writeConfig } from '../src/core/config.js';
 import { builtinTemplatesDir } from '../src/core/paths.js';
 import { t } from '../src/i18n/index.js';
 import { hasTools, makePng, tempDir } from './helpers.js';
@@ -187,6 +187,19 @@ describe('language', () => {
     expect((await app.inject({ method: 'GET', url: '/api/templates/nope' })).json().error).toBe(t('errors.templateNotFound', { ref: 'nope' }, 'it'));
     const bad = await app.inject({ method: 'PUT', url: '/api/settings', headers: H, payload: { language: 'fr' } });
     expect(bad.statusCode).toBe(400);
+  });
+
+  it('PUT /api/settings preserves other config keys', async () => {
+    await writeConfig({ defaultTemplate: 'standard' });
+    const put = await app.inject({ method: 'PUT', url: '/api/settings', headers: H, payload: { language: 'it' } });
+    expect(put.statusCode).toBe(200);
+    expect(await readConfig()).toMatchObject({ defaultTemplate: 'standard', language: 'it' });
+  });
+
+  it('PUT /api/settings without a language reports it is missing', async () => {
+    const r = await app.inject({ method: 'PUT', url: '/api/settings', headers: H, payload: {} });
+    expect(r.statusCode).toBe(400);
+    expect(r.json().error).toBe(t('errors.languageMissing', { supported: 'en, it' }, 'en'));
   });
 
   it('PUT /api/settings requires x-mdpress', async () => {

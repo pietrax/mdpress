@@ -93,6 +93,9 @@ export async function buildServer(opts: { catalog?: Catalog; language?: Language
 
   app.put<{ Body: { language?: unknown } | undefined }>('/api/settings', async (req) => {
     const language = req.body?.language;
+    if (language === undefined || language === null || language === '') {
+      throw new MdpressError('errors.languageMissing', 'BAD_INPUT', { supported: LANGUAGES.join(', ') });
+    }
     if (!isLanguage(language)) {
       throw new MdpressError('errors.unsupportedLanguage', 'BAD_INPUT', { lang: String(language), supported: LANGUAGES.join(', ') });
     }

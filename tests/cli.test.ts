@@ -147,6 +147,40 @@ describe('language', () => {
     expect(r.err).toContain(t('errors.unsupportedLanguage', { lang: 'fr', supported: 'en, it' }, 'en'));
   });
 
+  it('accepts --lang case-insensitively and with a region', async () => {
+    const expected = t('errors.templateNotFound', { ref: 'nope' }, 'it');
+    expect((await run(['--lang', 'IT', 'templates', 'show', 'nope'], { LANG: 'C' })).err).toContain(expected);
+    expect((await run(['--lang=it-IT', 'templates', 'show', 'nope'], { LANG: 'C' })).err).toContain(expected);
+  });
+
+  it('--lang without a value has a dedicated message', async () => {
+    for (const args of [['templates', 'list', '--lang'], ['--lang='], ['--lang', '--help']]) {
+      const r = await run(args, { LANG: 'C' });
+      expect(r.code).toBe(1);
+      expect(r.err).toBe(t('errors.languageMissing', { supported: 'en, it' }, 'en'));
+    }
+  });
+
+  it('localizes commander help and parse errors', async () => {
+    const help = await run(['--lang', 'it', '--help'], { LANG: 'C' });
+    expect(help.code).toBe(0);
+    expect(help.out).toContain(t('cli.options.help', {}, 'it'));
+    expect(help.out).toContain(t('cli.help.usage', {}, 'it'));
+    expect(help.out).toContain(t('cli.help.commands', {}, 'it'));
+    expect(help.out).not.toContain('Usage:');
+    const render = await run(['--lang', 'it', 'render', '--help'], { LANG: 'C' });
+    expect(render.out).toContain(`(${t('cli.help.default', {}, 'it')}: "pdf")`);
+    const missing = await run(['--lang', 'it', 'render'], { LANG: 'C' });
+    expect(missing.code).toBe(1);
+    expect(missing.err).toBe(t('cli.parse.missingArgument', { token: 'file' }, 'it'));
+    const bogus = await run(['--lang', 'it', '--bogus'], { LANG: 'C' });
+    expect(bogus.code).toBe(1);
+    expect(bogus.err).toBe(t('cli.parse.unknownOption', { token: '--bogus' }, 'it'));
+    const cmd = await run(['--lang', 'it', 'nope'], { LANG: 'C' });
+    expect(cmd.err).toBe(t('cli.parse.unknownCommand', { token: 'nope' }, 'it'));
+    expect((await run(['--lang', 'it', '--version'], { LANG: 'C' })).code).toBe(0);
+  });
+
   it('prints validation issues in the chosen language', async () => {
     const r = await run(['--lang', 'it', 'templates', 'new', 'Bad Slug'], { LANG: 'C' });
     expect(r.err).toContain(t('validation.slug', {}, 'it'));
