@@ -64,11 +64,14 @@ export class Catalog {
   async update(ref: string, input: Record<string, unknown>): Promise<CatalogEntry> {
     const current = await this.writable(ref);
     const template = parseTemplate({ ...input, id: current.template.id, schemaVersion: 1 });
+    let targetDir = current.dir;
     if (template.slug !== current.template.slug) {
       await this.assertSlugFree(template.slug, template.id);
-      await rename(current.dir, join(this.opts.userDir, template.slug));
+      await this.assertDirFree(join(this.opts.userDir, template.slug));
+      targetDir = join(this.opts.userDir, template.slug);
+      await rename(current.dir, targetDir);
     }
-    return this.write(template);
+    return this.write(template, targetDir);
   }
 
   async duplicate(ref: string, slug: string, name?: string): Promise<CatalogEntry> {
@@ -99,16 +102,26 @@ export class Catalog {
     if ((normalized !== 'png' && normalized !== 'jpg') || !isImage(data, normalized)) {
       throw new MdpressError('Il logo deve essere un file PNG o JPG', 'BAD_INPUT');
     }
-    for (const file of await readdir(entry.dir)) {
-      if (LOGO_FILE_RE.test(file)) await rm(join(entry.dir, file));
+    if (data.length > 2 * 1024 * 1024) {
+      throw new MdpressError('Il logo supera i 2 MB', 'BAD_INPUT');
     }
     const file = `logo.${normalized}`;
-    await writeFile(join(entry.dir, file), data);
-    return this.write({ ...entry.template, logo: { ...entry.template.logo, file } });
+    const filePath = join(entry.dir, file);
+    // Write new logo first
+    await writeFile(filePath, data);
+    // Update template with new logo file
+    const updated = { ...entry.template, logo: { ...entry.template.logo, file } };
+    await this.write(updated, entry.dir);
+    // Remove old logo files (not the one just written)
+    for (const oldFile of await readdir(entry.dir)) {
+      if (LOGO_FILE_RE.test(oldFile) && oldFile !== file) {
+        await rm(join(entry.dir, oldFile));
+      }
+    }
+    return this.entry(updated, entry.dir, false);
   }
 
-  protected async write(template: Template): Promise<CatalogEntry> {
-    const dir = join(this.opts.userDir, template.slug);
+  protected async write(template: Template, dir = join(this.opts.userDir, template.slug)): Promise<CatalogEntry> {
     await mkdir(dir, { recursive: true });
     await writeFile(join(dir, TEMPLATE_FILE), JSON.stringify(template, null, 2) + '\n');
     return this.entry(template, dir, false);
@@ -134,6 +147,13 @@ export class Catalog {
     const all = await this.list();
     if (all.some((e) => e.template.slug === slug && e.template.id !== exceptId)) {
       throw new MdpressError(`Esiste già un template con slug "${slug}"`, 'SLUG_TAKEN');
+    }
+  }
+
+  private async assertDirFree(dir: string): Promise<void> {
+    if (await exists(dir)) {
+      const slug = dir.split('/').pop() || '';
+      throw new MdpressError(`Esiste già una cartella "${slug}"`, 'SLUG_TAKEN');
     }
   }
 
