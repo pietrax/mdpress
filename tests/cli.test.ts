@@ -120,6 +120,14 @@ describe('language', () => {
     expect(r.err).toContain(t('errors.templateNotFound', { ref: 'nope' }, 'en'));
   });
 
+  it('an old default slug that no longer exists gives a clear error', async () => {
+    await writeConfig({ defaultTemplate: 'letter' + 'a' });
+    await writeFile(join(home, 'd.md'), '# x\n');
+    const r = await cli('render', join(home, 'd.md'));
+    expect(r.code).toBe(1);
+    expect(r.err).toContain(t('errors.templateNotFound', { ref: 'letter' + 'a' }, 'en'));
+  });
+
   it('--lang it switches to Italian, before or after the subcommand', async () => {
     const expected = t('errors.templateNotFound', { ref: 'nope' }, 'it');
     expect((await run(['--lang', 'it', 'templates', 'show', 'nope'], { LANG: 'C' })).err).toContain(expected);

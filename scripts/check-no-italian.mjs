@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Fails when Italian words appear in the software. Italian belongs only in src/i18n/locales/it.json.
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -36,14 +36,19 @@ function* files(path) {
   }
   if (stat.isDirectory()) {
     for (const name of readdirSync(abs)) if (!SKIPPED_DIRS.has(name)) yield* files(join(path, name));
-  } else if (TEXT_EXT.test(path) || path === 'README.md') {
+  } else if (TEXT_EXT.test(path)) {
     yield path;
   }
 }
 
-const targets = process.argv.slice(2).length > 0 ? process.argv.slice(2) : DEFAULT_PATHS;
+const explicit = process.argv.slice(2);
+const targets = explicit.length > 0 ? explicit : DEFAULT_PATHS;
 const hits = [];
 for (const target of targets) {
+  if (explicit.length > 0 && !existsSync(resolve(ROOT, target))) {
+    console.error(`Path not found: ${target}`);
+    process.exit(1);
+  }
   for (const file of files(relative(ROOT, resolve(ROOT, target)))) {
     if (EXCLUDED.has(file)) continue;
     readFileSync(join(ROOT, file), 'utf8').split('\n').forEach((line, i) => {

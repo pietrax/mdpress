@@ -1,4 +1,4 @@
-// Genera il logo segnaposto generico del template "report" (360×120, due bande blu).
+// Generates the generic placeholder logo of the "report" template (360×120, two blue bands).
 import { writeFileSync } from 'node:fs';
 import { deflateSync } from 'node:zlib';
 

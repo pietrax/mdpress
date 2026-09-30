@@ -1,5 +1,5 @@
 class Mdpress < Formula
-  desc "Impagina Markdown in PDF e DOCX con template personalizzabili"
+  desc "Lay out Markdown as PDF and DOCX with customizable templates"
   homepage "https://github.com/pietrax/mdpress"
   url "https://github.com/pietrax/mdpress/releases/download/v__VERSION__/mdpress-__VERSION__.tar.gz"
   sha256 "__SHA256__"
@@ -16,9 +16,9 @@ class Mdpress < Formula
 
   test do
     system bin/"mdpress", "doctor"
-    (testpath/"prova.md").write("---\ntitle: Prova\n---\n\n# Ciao\n\nTesto.\n")
-    system bin/"mdpress", "render", testpath/"prova.md", "-f", "pdf,docx"
-    assert_path_exists testpath/"prova.pdf"
-    assert_path_exists testpath/"prova.docx"
+    (testpath/"sample.md").write("---\ntitle: Sample\n---\n\n# Hello\n\nText.\n")
+    system bin/"mdpress", "render", testpath/"sample.md", "-f", "pdf,docx"
+    assert_path_exists testpath/"sample.pdf"
+    assert_path_exists testpath/"sample.docx"
   end
 end

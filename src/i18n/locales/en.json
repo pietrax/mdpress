@@ -163,8 +163,7 @@
       "delete": "Delete",
       "copyPrompt": "Name of the copy",
       "copyDefaultName": "{name} (copy)",
-      "deleteConfirm": "Delete the template \"{name}\"?",
-      "empty": "No templates yet."
+      "deleteConfirm": "Delete the template \"{name}\"?"
     },
     "editor": {
       "back": "← Catalogue",

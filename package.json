@@ -1,7 +1,7 @@
 {
   "name": "mdpress",
   "version": "0.1.0",
-  "description": "Impagina Markdown in PDF e DOCX con template personalizzabili",
+  "description": "Lay out Markdown as PDF and DOCX with customizable templates",
   "type": "module",
   "license": "MIT",
   "private": true,
@@ -16,6 +16,7 @@
     "dev": "tsx src/cli/index.ts",
     "dev:web": "vite",
     "test": "vitest run",
+    "check:lang": "node scripts/check-no-italian.mjs",
     "typecheck": "tsc --noEmit && tsc --noEmit -p web/tsconfig.json"
   },
   "dependencies": {

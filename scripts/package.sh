@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Crea release/mdpress-<versione>.tar.gz con build, template, asset e dipendenze di produzione.
+# Creates release/mdpress-<version>.tar.gz with the build, templates, assets and production dependencies.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 VERSION=$(node -p "require('./package.json').version")

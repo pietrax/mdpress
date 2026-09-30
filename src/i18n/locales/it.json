@@ -163,8 +163,7 @@
       "delete": "Elimina",
       "copyPrompt": "Nome della copia",
       "copyDefaultName": "{name} (copia)",
-      "deleteConfirm": "Eliminare il template \"{name}\"?",
-      "empty": "Nessun template."
+      "deleteConfirm": "Eliminare il template \"{name}\"?"
     },
     "editor": {
       "back": "← Catalogo",
