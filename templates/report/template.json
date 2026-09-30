@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "mdprep01",
+  "slug": "report",
+  "name": "Report",
+  "description": "Copertina con logo, testata con titolo, titoli numerati",
+  "page": { "size": "A4", "orientation": "portrait", "margins": { "top": 25, "bottom": 25, "left": 20, "right": 20 } },
+  "colors": { "text": "#1f2328", "heading": "#0b3d91", "accent": "#0b3d91", "muted": "#6e7781" },
+  "fonts": { "body": "Helvetica Neue", "heading": "Helvetica Neue", "mono": "Menlo", "size": 11 },
+  "headings": { "numbered": true },
+  "header": { "left": { "type": "logo" }, "center": { "type": "empty" }, "right": { "type": "text", "value": "{title}" }, "rule": true, "skipFirstPage": true },
+  "footer": { "left": { "type": "text", "value": "{author}" }, "center": { "type": "empty" }, "right": { "type": "text", "value": "{page} / {pages}" }, "rule": false, "skipFirstPage": true },
+  "logo": { "file": "logo.png", "height": 10 },
+  "cover": { "enabled": true, "showLogo": true, "fields": ["title", "subtitle", "author", "date"] },
+  "blocks": { "tableStriped": true, "codeBackground": "#f3f6fb", "quoteBar": true }
+}

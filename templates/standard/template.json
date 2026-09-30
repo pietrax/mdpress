@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "mdpstd01",
+  "slug": "standard",
+  "name": "Standard",
+  "description": "Sobrio, senza copertina, numero di pagina in basso a destra",
+  "page": { "size": "A4", "orientation": "portrait", "margins": { "top": 25, "bottom": 25, "left": 20, "right": 20 } },
+  "colors": { "text": "#1f2328", "heading": "#1f2328", "accent": "#0969da", "muted": "#6e7781" },
+  "fonts": { "body": "Helvetica Neue", "heading": "Helvetica Neue", "mono": "Menlo", "size": 11 },
+  "headings": { "numbered": false },
+  "header": { "left": { "type": "empty" }, "center": { "type": "empty" }, "right": { "type": "empty" }, "rule": false, "skipFirstPage": false },
+  "footer": { "left": { "type": "empty" }, "center": { "type": "empty" }, "right": { "type": "text", "value": "{page} / {pages}" }, "rule": false, "skipFirstPage": false },
+  "logo": { "file": null, "height": 12 },
+  "cover": { "enabled": false, "showLogo": true, "fields": ["title", "subtitle", "author", "date"] },
+  "blocks": { "tableStriped": false, "codeBackground": "#f6f8fa", "quoteBar": true }
+}
