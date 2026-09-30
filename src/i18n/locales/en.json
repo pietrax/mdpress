@@ -1,0 +1,48 @@
+{
+  "errors": {
+    "templateInvalid": "Invalid template",
+    "templateNotFound": "Template \"{ref}\" not found. Run \"mdpress templates list\" to see the available ones.",
+    "templateReadonly": "\"{name}\" is a built-in template: duplicate it to edit it",
+    "slugTaken": "A template with slug \"{slug}\" already exists",
+    "folderTaken": "A folder named \"{slug}\" already exists",
+    "logoType": "The logo must be a PNG or JPG file",
+    "logoTooLarge": "The logo is larger than 2 MB",
+    "zipInvalid": "The file is not a valid zip archive",
+    "zipNoTemplate": "The zip archive does not contain template.json",
+    "zipBadJson": "template.json is not valid JSON",
+    "configInvalid": "Invalid config.json: {path}",
+    "formatMissing": "Specify at least one format: pdf or docx",
+    "formatUnsupported": "Unsupported format: {format} (use pdf, docx or pdf,docx)",
+    "frontmatterInvalid": "Invalid YAML front-matter: {details}",
+    "fileNotFound": "File not found: {file}",
+    "renderFailed": "Rendering failed ({tool}): {details}",
+    "renderFailedWorkDir": "Rendering failed ({tool}): {details}\nWork directory: {dir}",
+    "dependenciesMissing": "Missing or outdated dependencies: {list}. Install them with: brew install pandoc typst",
+    "unsupportedLanguage": "Unsupported language: {lang} (supported: {supported})"
+  },
+  "validation": {
+    "notObject": "the template must be a JSON object",
+    "tooBig": "must be at most {max}",
+    "tooSmall": "must be at least {min}",
+    "tooLong": "at most {max} characters",
+    "required": "required",
+    "number": "enter a number",
+    "boolean": "must be yes or no",
+    "invalidType": "invalid type (expected {expected})",
+    "color": "invalid hex color (#rrggbb)",
+    "slug": "invalid slug: only a-z, 0-9 and hyphens",
+    "id": "invalid id",
+    "logoFile": "the logo must be named logo.png or logo.jpg",
+    "oneOf": "allowed values: {values}",
+    "invalid": "invalid value"
+  },
+  "warnings": {
+    "fontMissing": "Font not installed: {font} (using a fallback font)",
+    "imageNotFound": "Image not found, replaced by its alt text: {src}",
+    "imageUnreachable": "Image unreachable, replaced by its alt text: {src}",
+    "tool": "{details}"
+  },
+  "document": {
+    "tocTitle": "Contents"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "errors": {
+    "templateInvalid": "Template non valido",
+    "templateNotFound": "Template \"{ref}\" non trovato. Usa \"mdpress templates list\" per vedere quelli disponibili.",
+    "templateReadonly": "\"{name}\" è un template built-in: duplicalo per modificarlo",
+    "slugTaken": "Esiste già un template con slug \"{slug}\"",
+    "folderTaken": "Esiste già una cartella \"{slug}\"",
+    "logoType": "Il logo deve essere un file PNG o JPG",
+    "logoTooLarge": "Il logo supera i 2 MB",
+    "zipInvalid": "Il file non è uno zip valido",
+    "zipNoTemplate": "Lo zip non contiene template.json",
+    "zipBadJson": "template.json non è un JSON valido",
+    "configInvalid": "config.json non valido: {path}",
+    "formatMissing": "Indica almeno un formato: pdf o docx",
+    "formatUnsupported": "Formato non supportato: {format} (usa pdf, docx o pdf,docx)",
+    "frontmatterInvalid": "Front-matter YAML non valido: {details}",
+    "fileNotFound": "File non trovato: {file}",
+    "renderFailed": "Rendering fallito ({tool}): {details}",
+    "renderFailedWorkDir": "Rendering fallito ({tool}): {details}\nCartella di lavoro: {dir}",
+    "dependenciesMissing": "Dipendenze mancanti o troppo vecchie: {list}. Installa con: brew install pandoc typst",
+    "unsupportedLanguage": "Lingua non supportata: {lang} (disponibili: {supported})"
+  },
+  "validation": {
+    "notObject": "il template deve essere un oggetto JSON",
+    "tooBig": "deve essere al massimo {max}",
+    "tooSmall": "deve essere almeno {min}",
+    "tooLong": "al massimo {max} caratteri",
+    "required": "campo obbligatorio",
+    "number": "inserisci un numero",
+    "boolean": "indica sì o no",
+    "invalidType": "tipo non valido (atteso {expected})",
+    "color": "colore esadecimale non valido (#rrggbb)",
+    "slug": "slug non valido: solo a-z, 0-9 e trattini",
+    "id": "id non valido",
+    "logoFile": "il logo deve chiamarsi logo.png o logo.jpg",
+    "oneOf": "valori ammessi: {values}",
+    "invalid": "valore non valido"
+  },
+  "warnings": {
+    "fontMissing": "Font non installato: {font} (uso un font di ripiego)",
+    "imageNotFound": "Immagine non trovata, sostituita dal testo alternativo: {src}",
+    "imageUnreachable": "Immagine non raggiungibile, sostituita dal testo alternativo: {src}",
+    "tool": "{details}"
+  },
+  "document": {
+    "tocTitle": "Indice"
+  }
+}
