@@ -57,7 +57,12 @@ function cleanStderr(stderr: string): string {
 
 let baseReference: Promise<Buffer> | null = null;
 function defaultReferenceDocx(): Promise<Buffer> {
-  baseReference ??= run('pandoc', ['--print-default-data-file', 'reference.docx']).then((r) => r.stdout);
+  baseReference ??= run('pandoc', ['--print-default-data-file', 'reference.docx'])
+    .then((r) => r.stdout)
+    .catch((err: unknown) => {
+      baseReference = null;
+      throw err;
+    });
   return baseReference;
 }
 
