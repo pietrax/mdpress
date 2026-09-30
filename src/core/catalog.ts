@@ -1,8 +1,10 @@
 import { access, copyFile, mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import JSZip from 'jszip';
 import { MdpressError } from './errors.js';
 import { builtinTemplatesDir, userTemplatesDir } from './paths.js';
-import { LOGO_FILE_RE, newId, parseTemplate, type Template } from './theme.js';
+import { ID_RE, LOGO_FILE_RE, newId, parseTemplate, type Template } from './theme.js';
+import { uniqueSlug } from './slug.js';
 
 export const TEMPLATE_FILE = 'template.json';
 
@@ -119,6 +121,76 @@ export class Catalog {
       }
     }
     return this.entry(updated, entry.dir, false);
+  }
+
+  async exportZip(ref: string): Promise<Buffer> {
+    const entry = await this.resolve(ref);
+    const zip = new JSZip();
+    zip.file(TEMPLATE_FILE, JSON.stringify(entry.template, null, 2) + '\n');
+    if (entry.logoPath && entry.template.logo.file) {
+      zip.file(entry.template.logo.file, await readFile(entry.logoPath));
+    }
+    return zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
+  }
+
+  async importZip(data: Buffer): Promise<CatalogEntry> {
+    let zip: JSZip;
+    try {
+      zip = await JSZip.loadAsync(data);
+    } catch {
+      throw new MdpressError('Il file non è uno zip valido', 'BAD_INPUT');
+    }
+    const jsonFile = zip.file(TEMPLATE_FILE) ?? zip.file(/(^|\/)template\.json$/)[0];
+    if (!jsonFile) throw new MdpressError('Lo zip non contiene template.json', 'BAD_INPUT');
+    const prefix = jsonFile.name.slice(0, -TEMPLATE_FILE.length);
+
+    let raw: unknown;
+    try {
+      raw = JSON.parse(await jsonFile.async('string'));
+    } catch {
+      throw new MdpressError('template.json non è un JSON valido', 'BAD_INPUT');
+    }
+    const input = (typeof raw === 'object' && raw !== null ? raw : {}) as Record<string, unknown>;
+    const parsed = parseTemplate({
+      ...input,
+      id: typeof input.id === 'string' && ID_RE.test(input.id) ? input.id : newId(),
+    });
+
+    const all = await this.list();
+    const id = all.some((e) => e.template.id === parsed.id) ? newId() : parsed.id;
+
+    // Collect taken slugs from catalog and existing folder names
+    let existingDirs: string[] = [];
+    try {
+      existingDirs = await readdir(this.opts.userDir);
+    } catch {
+      // ignore ENOENT
+    }
+    const taken = [...all.map((e) => e.template.slug), ...existingDirs];
+    const slug = uniqueSlug(parsed.slug, taken);
+    const logoFile = parsed.logo.file ? zip.file(prefix + parsed.logo.file) : null;
+
+    // Check logo size limit if present
+    if (logoFile) {
+      const logoData = await logoFile.async('nodebuffer');
+      if (logoData.length > 2 * 1024 * 1024) {
+        throw new MdpressError('Il logo supera i 2 MB', 'BAD_INPUT');
+      }
+    }
+
+    const template: Template = {
+      ...parsed,
+      id,
+      slug,
+      logo: { ...parsed.logo, file: logoFile ? parsed.logo.file : null },
+    };
+
+    const entry = await this.write(template);
+    if (logoFile && template.logo.file) {
+      await writeFile(join(entry.dir, template.logo.file), await logoFile.async('nodebuffer'));
+      return this.entry(template, entry.dir, false);
+    }
+    return entry;
   }
 
   protected async write(template: Template, dir = join(this.opts.userDir, template.slug)): Promise<CatalogEntry> {
