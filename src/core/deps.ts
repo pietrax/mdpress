@@ -3,7 +3,7 @@ import { run } from './exec.js';
 
 export type DepName = 'pandoc' | 'typst';
 
-export const MIN_VERSIONS: Record<DepName, string> = { pandoc: '3.1', typst: '0.12' };
+export const MIN_VERSIONS: Record<DepName, string> = { pandoc: '3.1.2', typst: '0.12' };
 
 export interface DepStatus {
   name: DepName;

@@ -8,7 +8,11 @@ export const LOGO_FILE_RE = /^logo\.(png|jpg)$/;
 export const newId = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 8);
 
 const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'colore esadecimale non valido (#rrggbb)');
-const range = (min: number, max: number) => z.number().min(min).max(max);
+const range = (min: number, max: number) =>
+  z
+    .number({ error: 'inserisci un numero' })
+    .min(min, { error: `deve essere almeno ${min}` })
+    .max(max, { error: `deve essere al massimo ${max}` });
 const fontName = z.string().min(1, 'indica un font').max(100);
 
 const SlotSchema = z.discriminatedUnion('type', [
@@ -21,8 +25,8 @@ const BandSchema = z.object({
   left: SlotSchema,
   center: SlotSchema,
   right: SlotSchema,
-  rule: z.boolean(),
-  skipFirstPage: z.boolean(),
+  rule: z.boolean({ error: 'indica sì o no' }),
+  skipFirstPage: z.boolean({ error: 'indica sì o no' }),
 });
 
 const CoverFieldSchema = z.enum(['title', 'subtitle', 'author', 'date']);
@@ -34,13 +38,13 @@ export const TemplateSchema = z.object({
   name: z.string().min(1, 'il nome è obbligatorio').max(80),
   description: z.string().max(300),
   page: z.object({
-    size: z.enum(['A4', 'A5', 'Letter']),
-    orientation: z.enum(['portrait', 'landscape']),
+    size: z.enum(['A4', 'A5', 'Letter'], { error: 'scegli A4, A5 o Letter' }),
+    orientation: z.enum(['portrait', 'landscape'], { error: 'scegli portrait o landscape' }),
     margins: z.object({ top: range(0, 80), bottom: range(0, 80), left: range(0, 80), right: range(0, 80) }),
   }),
   colors: z.object({ text: hex, heading: hex, accent: hex, muted: hex }),
   fonts: z.object({ body: fontName, heading: fontName, mono: fontName, size: range(8, 16) }),
-  headings: z.object({ numbered: z.boolean() }),
+  headings: z.object({ numbered: z.boolean({ error: 'indica sì o no' }) }),
   header: BandSchema,
   footer: BandSchema,
   logo: z.object({

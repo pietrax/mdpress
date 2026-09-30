@@ -39,7 +39,10 @@ export function ConvertPage() {
 
   useDebouncedEffect(
     () => {
-      if (!markdown.trim() || !templateId) return;
+      if (!markdown.trim() || !templateId) {
+        setBusy(false);
+        return;
+      }
       let cancelled = false;
       setBusy(true);
       api

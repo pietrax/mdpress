@@ -87,3 +87,21 @@ describe('built-in standard', () => {
     expect(description.length).toBeGreaterThan(0);
   });
 });
+
+describe('messaggi di validazione in italiano', () => {
+  function messagesOf(input: unknown): string[] {
+    try {
+      parseTemplate(input);
+    } catch (err) {
+      if (err instanceof MdpressError) return err.issues.map((i) => i.message);
+    }
+    return [];
+  }
+  const base = { id: 'abcd1234', slug: 'p', name: 'P' };
+
+  it('intervalli e tipo dei numeri', () => {
+    expect(messagesOf({ ...base, fonts: { size: 20 } })[0]).toContain('al massimo 16');
+    expect(messagesOf({ ...base, fonts: { size: 2 } })[0]).toContain('almeno 8');
+    expect(messagesOf({ ...base, page: { margins: { top: null } } })).toEqual(['inserisci un numero']);
+  });
+});

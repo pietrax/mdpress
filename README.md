@@ -11,7 +11,7 @@ brew install pietrax/tap/mdpress
 mdpress doctor
 ```
 
-Homebrew installa anche `pandoc` e `typst`.
+Homebrew installa anche `pandoc` e `typst`. Requisiti: Node ≥ 22.12, `pandoc` ≥ 3.1.2, `typst` ≥ 0.12.
 
 ## Uso da terminale
 

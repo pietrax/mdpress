@@ -58,7 +58,7 @@ mdpress/
 
 - `core` contiene tutta la logica; CLI e server sono involucri sottili, quindi il
   comportamento è identico nei due canali.
-- Dipendenze di sistema: `pandoc` (≥ 3.1) e `typst` (≥ 0.12). Verificate a runtime da
+- Dipendenze di sistema: `pandoc` (≥ 3.1.2) e `typst` (≥ 0.12). Verificate a runtime da
   `deps.ts`.
 
 ## 3. Catalogo

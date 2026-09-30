@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { existsSync } from 'node:fs';
-import { writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { main } from '../src/cli/program.js';
 import { Catalog } from '../src/core/catalog.js';
@@ -40,8 +40,12 @@ describe('mdpress templates', () => {
     expect(JSON.parse((await cli('templates', 'show', 'mio')).out).name).toBe('Il mio');
     expect((await cli('templates', 'default', 'mio')).code).toBe(0);
     expect((await cli('templates', 'list')).out).toMatch(/\* [a-z0-9]{8}\s+mio/);
-    expect((await cli('templates', 'delete', 'mio')).code).toBe(0);
+    const del = await cli('templates', 'delete', 'mio');
+    expect(del.code).toBe(0);
+    expect(del.out).toContain('tornato a standard');
     expect((await cli('templates', 'show', 'mio')).code).toBe(1);
+    expect((await cli('templates', 'default')).out).toBe('standard');
+    expect(JSON.parse(await readFile(join(home, 'config.json'), 'utf8'))).toEqual({});
   });
 
   it('new --from duplica', async () => {

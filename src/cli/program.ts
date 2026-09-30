@@ -106,8 +106,15 @@ function buildProgram(io: CliIO, state: State, catalog: Catalog): Command {
     });
 
   templates.command('delete <ref>').description('Elimina un template utente').action(async (ref: string) => {
+    const entry = await catalog.resolve(ref);
     await catalog.remove(ref);
     io.out(`✓ eliminato ${ref}`);
+    const config = await readConfig();
+    if (config.defaultTemplate === entry.template.id || config.defaultTemplate === entry.template.slug) {
+      delete config.defaultTemplate;
+      await writeConfig(config);
+      io.out('Il template eliminato era quello di default: il default è tornato a standard.');
+    }
   });
 
   templates
