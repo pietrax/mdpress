@@ -156,13 +156,15 @@ describe.runIf(hasTools)('compilazione reale con pandoc e typst', () => {
     const dir = join(await tempDir(), 'cartella con spazi è');
     await mkdir(join(dir, 'img'), { recursive: true });
     await writeFile(join(dir, 'img', 'p.png'), makePng(4, 4));
-    const input = '![uno](img/p.png)\n\n![manca](nope.png)\n\n![remota](http://127.0.0.1:9/x.png)\n';
+    await writeFile(join(dir, 'img', 'spazio uno.png'), makePng(4, 4));
+    const input = '![spazio](<img/spazio uno.png>)\n\n![uno](img/p.png)\n\n![manca](nope.png)\n\n![remota](http://127.0.0.1:9/x.png)\n';
     const r = await run('pandoc', ['-f', 'markdown', '-t', 'typst', '--lua-filter', join(assetsDir, 'filters', 'images.lua')], {
       input,
       env: { MDPRESS_BASE: dir, MDPRESS_WORKDIR: dir },
     });
     const out = r.stdout.toString('utf8');
     expect(out).toContain(join(dir, 'img', 'p.png'));
+    expect(out).toContain(join(dir, 'img', 'spazio uno.png'));
     expect(out).toContain('manca');
     expect(out).not.toContain('nope.png');
     expect(out).not.toContain('127.0.0.1');

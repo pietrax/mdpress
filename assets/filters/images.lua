@@ -42,9 +42,19 @@ function Image(img)
     return img
   end
 
-  local path = src
-  if base and not pandoc.path.is_absolute(src) then
-    path = pandoc.path.normalize(pandoc.path.join({ base, src }))
+  -- pandoc passa le sorgenti locali percent-encoded: prova il percorso letterale, poi quello decodificato.
+  local decoded = src:gsub('%%(%x%x)', function(h)
+    return string.char(tonumber(h, 16))
+  end)
+  local function resolve(candidate)
+    if base and not pandoc.path.is_absolute(candidate) then
+      return pandoc.path.normalize(pandoc.path.join({ base, candidate }))
+    end
+    return candidate
+  end
+  local path = resolve(src)
+  if not exists(path) then
+    path = resolve(decoded)
   end
   if not exists(path) then
     warn('immagine non trovata, sostituita dal testo alternativo: ' .. src)

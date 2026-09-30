@@ -60,6 +60,7 @@ export class Catalog {
   async create(input: Record<string, unknown>): Promise<CatalogEntry> {
     const template = parseTemplate({ ...input, id: newId(), schemaVersion: 1 });
     await this.assertSlugFree(template.slug);
+    await this.assertDirFree(join(this.opts.userDir, template.slug));
     return this.write(template);
   }
 
@@ -85,6 +86,7 @@ export class Catalog {
       name: name ?? `${source.template.name} (copia)`,
     });
     await this.assertSlugFree(template.slug);
+    await this.assertDirFree(join(this.opts.userDir, template.slug));
     const entry = await this.write(template);
     if (source.logoPath && template.logo.file) {
       await copyFile(source.logoPath, join(entry.dir, template.logo.file));

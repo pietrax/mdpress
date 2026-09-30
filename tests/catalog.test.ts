@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { existsSync } from 'node:fs';
-import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Catalog } from '../src/core/catalog.js';
 import { builtinTemplatesDir } from '../src/core/paths.js';
@@ -41,6 +41,17 @@ describe('Catalog', () => {
 
   it('rifiuta slug già usati, anche dai built-in', async () => {
     expect(await code(catalog.create({ slug: 'standard', name: 'X' }))).toBe('SLUG_TAKEN');
+  });
+
+  it('non sovrascrive una cartella con template.json illeggibile (create e duplicate)', async () => {
+    await mkdir(join(userDir, 'rotto'), { recursive: true });
+    const file = join(userDir, 'rotto', 'template.json');
+    await writeFile(file, '{ non valido');
+    const warn = vi.spyOn(process, 'emitWarning').mockImplementation(() => {});
+    expect(await code(catalog.create({ slug: 'rotto', name: 'X' }))).toBe('SLUG_TAKEN');
+    expect(await code(catalog.duplicate('standard', 'rotto'))).toBe('SLUG_TAKEN');
+    warn.mockRestore();
+    expect(await readFile(file, 'utf8')).toBe('{ non valido');
   });
 
   it('non modifica né elimina i built-in', async () => {

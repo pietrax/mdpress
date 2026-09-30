@@ -83,6 +83,15 @@ describe.runIf(hasTools)('render con pandoc e typst', () => {
     }
   });
 
+  it('immagine con spazio nel nome: presente in PDF e DOCX, nessun warning', async () => {
+    await writeFile(join(dir, 'img', 'foto uno.png'), makePng(40, 30));
+    await writeFile(join(dir, 'spazi.md'), '# T\n\n![x](<img/foto uno.png>)\n');
+    const r = await renderFile(join(dir, 'spazi.md'), { formats: ['pdf', 'docx'], output: join(dir, 'out', 'spazi'), catalog });
+    expect(r.warnings.join('\n')).not.toContain('non trovata');
+    expect((await readFile(r.outputs[0])).subarray(0, 4).toString()).toBe('%PDF');
+    expect((await unzipText(await readFile(r.outputs[1]), 'word/document.xml')) ?? '').toContain('<a:blip');
+  });
+
   it('copertina e indice: pagine in più, campo TOC, interruzione e updateFields', async () => {
     const base = { formats: ['pdf', 'docx'] as const, catalog, overrides: { cover: true, toc: true } };
     const r = await renderFile(join(dir, 'doc.md'), { ...base, formats: [...base.formats], output: join(dir, 'out', 'tc') });
