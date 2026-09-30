@@ -122,7 +122,7 @@ mdpress/
     "rule": false,
     "skipFirstPage": true
   },
-  "logo": { "file": "logo.png", "height": 12 },     // mm; png | jpg | svg
+  "logo": { "file": "logo.png", "height": 12 },     // mm; png | jpg (null = nessun logo)
   "cover": {
     "enabled": true,
     "showLogo": true,
@@ -149,7 +149,11 @@ mdpress/
 - **Segnaposto** nei testi degli slot: `{title}`, `{subtitle}`, `{author}`, `{date}`
   (dal front-matter; vuoti se assenti), `{page}`, `{pages}`.
 - `skipFirstPage`: header/footer non mostrati sulla prima pagina (in pratica sulla
-  copertina, se presente).
+  copertina, se presente). `{page}`/`{pages}` contano le pagine fisiche, copertina inclusa.
+- `cover.fields`: quali metadati compaiono in copertina e, senza copertina, nel blocco
+  titolo compatto in testa alla prima pagina (mostrato solo se il front-matter ha `title`).
+- Logo: solo PNG o JPG (SVG escluso in v1: Word lo gestisce male negli header).
+- Lingua del documento fissa a italiano in v1 (sillabazione, titolo "Indice").
 - Font non installato: warning, non errore (Typst usa un fallback; nel DOCX il nome resta
   negli stili e Word lo sostituisce se assente).
 - `schemaVersion` permette migrazioni future; v1 rifiuta versioni sconosciute con
@@ -168,35 +172,46 @@ Opzioni: `format` (`pdf`, `docx`, o entrambi), `toc` (default **false**), `cover
 Precedenza, dalla più alta: **CLI/UI → front-matter → template → default**.
 Il front-matter può contenere `toc: true|false`, `cover: true|false`, oltre ai
 metadati `title`, `subtitle`, `author`, `date`.
-Se `title` manca nel front-matter si usa il nome del file senza estensione.
+Se `title` manca nel front-matter si usa il nome del file senza estensione per i
+segnaposto `{title}` e per la copertina (il blocco titolo compatto invece non compare).
 
 ## 6. Flusso di rendering (`core/render.ts`)
 
 1. Legge l'md, estrae il front-matter, risolve il template, calcola le opzioni effettive.
-2. Crea una cartella temporanea di lavoro; copia il logo del template.
+2. Crea una cartella temporanea di lavoro e vi scrive l'md. I parametri per i filtri Lua
+   (cartella dell'md, flag copertina/indice, logo…) passano come variabili d'ambiente
+   `MDPRESS_*`, così percorsi con caratteri speciali non vengono reinterpretati.
 3. **PDF**:
    - `typst.ts` genera un template pandoc per Typst: impostazioni pagina, font, colori,
      header/footer (con `counter(page)` per `{page}`/`{pages}` e logo), copertina
      opzionale, indice opzionale (`outline()`), numerazione titoli, stili di tabelle,
      codice e citazioni. I metadati sono passati come variabili pandoc, correttamente
-     escapati per Typst.
-   - `pandoc doc.md -t typst --template <generato> -o doc.typ`, eseguito con cwd nella
-     cartella dell'md così che le immagini relative si risolvano.
+     escapati per Typst (e `$` raddoppiato per il template pandoc).
+   - `pandoc input.md -t typst --template <generato> --lua-filter images.lua -o doc.typ`;
+     il filtro `images.lua` rende assoluti i percorsi delle immagini relative (rispetto alla
+     cartella dell'md), scarica quelle remote nella cartella di lavoro e sostituisce con il
+     testo alternativo (più un warning) le immagini mancanti o irraggiungibili.
    - `typst compile --root / doc.typ out.pdf`.
 4. **DOCX**:
    - `docx.ts` parte dal reference.docx di default di pandoc
-     (`pandoc -o ref.docx --print-default-data-file reference.docx`, messo in cache per
-     versione di pandoc) e lo modifica con **JSZip**:
+     (`pandoc --print-default-data-file reference.docx`, in cache in memoria per processo)
+     e lo modifica con **JSZip**:
      - `styles.xml`: font, dimensioni, colori per Normal, Heading 1–6, Title, Subtitle,
        Block Text (citazioni), Source Code / Verbatim Char, Table.
      - header/footer: tabella a tre colonne senza bordi (sinistra/centro/destra) con
        testi dei segnaposto già sostituiti coi metadati del documento, campi `PAGE` e
        `NUMPAGES` per i numeri, logo come immagine inline; filetto come bordo di paragrafo.
-     - `settings.xml`/`sectPr`: `titlePg` se `skipFirstPage`; dimensioni e margini pagina.
-     - numerazione titoli tramite `numbering.xml` collegato agli stili Heading 1–3.
-   - `pandoc doc.md --reference-doc ref.docx [--toc] --lua-filter cover.lua -o out.docx`;
-     il filtro Lua inserisce la copertina (logo, campi) seguita da un'interruzione di pagina
-     quando `cover` è attivo.
+     - `sectPr`: `titlePg` se `skipFirstPage`; dimensioni, orientamento e margini pagina.
+     - stili Title/Subtitle/Author/Date più grandi e distanziati quando c'è la copertina;
+       `TOC Heading` con interruzione di pagina prima, se c'è la copertina.
+   - `pandoc input.md --reference-doc ref.docx --resource-path <cartella md>
+     [--number-sections] [--toc --toc-depth=3] --lua-filter docx.lua -o out.docx`.
+     La copertina è il blocco titolo nativo di pandoc (Title, Subtitle, Author, Date)
+     con il logo inserito in testa al titolo dal filtro; il filtro rimuove i campi non
+     selezionati, esclude dalla numerazione i titoli oltre il livello 3 e inserisce
+     un'interruzione di pagina prima del corpo quando c'è copertina o indice.
+   - Post-processing: con l'indice si aggiunge `updateFields` a `settings.xml` così Word
+     aggiorna l'indice all'apertura (pandoc lo scarta dal reference.docx).
    - Il reference.docx è generato a ogni rendering perché contiene i metadati del
      documento.
 5. Scrive l'output (o restituisce i byte al server) e rimuove la cartella temporanea
@@ -235,15 +250,21 @@ mdpress doctor
 
 - `GET /api/templates` · `GET /api/templates/:ref` · `POST /api/templates` ·
   `PUT /api/templates/:ref` · `DELETE /api/templates/:ref`
-- `POST /api/templates/:ref/logo` (upload, max 2 MB, png/jpg/svg)
+- `PUT /api/templates/:ref/logo` (body binario `image/png` o `image/jpeg`, max 2 MB) ·
+  `GET /api/templates/:ref/logo`
 - `GET /api/templates/:ref/thumbnail.png`
 - `POST /api/templates/import` (zip, max 5 MB) · `GET /api/templates/:ref/export`
 - `POST /api/preview` → PDF dell'md di esempio con un template non ancora salvato (body JSON)
-- `POST /api/render` → md (multipart o testo) + ref template + opzioni → file
+- `POST /api/render` → JSON `{ markdown, filename, template, format, toc, cover }` → file
+  (le immagini con percorso relativo non sono disponibili da web: vengono sostituite dal
+  testo alternativo)
 - `GET /api/fonts` → elenco font da `typst fonts`
 - `GET /api/doctor`
-- Validazione di `ref`/slug contro path traversal; errori zod restituiti come
-  `{ errors: [{ path, message }] }` con 400.
+- `ref` non è mai usato come percorso: si risolve solo tra i template del catalogo.
+  Errori zod restituiti come `{ error, code, errors: [{ path, message }] }` con 400.
+- Protezione da siti terzi che chiamano `localhost`: le richieste `/api/*` devono avere
+  Host `127.0.0.1` o `localhost`, e quelle non-GET l'header `x-mdpress: 1` (un sito
+  esterno non può impostarlo senza preflight CORS, che il server non concede).
 
 ### UI (React + Vite)
 
