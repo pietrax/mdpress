@@ -1,5 +1,24 @@
+# dependencies and build output
 node_modules/
 dist/
 release/
+coverage/
 *.tsbuildinfo
+
+# local tool state and logs
+.superpowers/
+*.log
+npm-debug.log*
+.env
+.env.*
+
+# editors and OS
 .DS_Store
+.idea/
+.vscode/
+
+# personal material that is not part of the software
+template-da-docx/
+docs/articolo-medium.md
+docs/medium-article-en.md
+docs/pubblicazione-homebrew.md

@@ -260,7 +260,11 @@
         "right": "Right"
       },
       "rule": "Rule",
-      "skipFirstPage": "Hide on the first page"
+      "skipFirstPage": "Hide on the first page",
+      "textSize": "Text size (pt)",
+      "textSizeHint": "Leave empty for automatic",
+      "bold": "Bold",
+      "centerOnlyHint": "With only the center slot filled, it spans the full width"
     }
   }
 }

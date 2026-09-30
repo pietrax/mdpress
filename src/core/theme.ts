@@ -25,6 +25,9 @@ const BandSchema = z.object({
   right: SlotSchema,
   rule: z.boolean(),
   skipFirstPage: z.boolean(),
+  /** Text size in pt; null = automatic (SCALE.small × body size). */
+  textSize: z.number().min(5).max(14).nullable(),
+  bold: z.boolean(),
 });
 
 const CoverFieldSchema = z.enum(['title', 'subtitle', 'author', 'date']);
@@ -67,13 +70,15 @@ export const DEFAULTS: Omit<Template, 'id' | 'slug' | 'name'> = {
   colors: { text: '#1f2328', heading: '#1f2328', accent: '#0969da', muted: '#6e7781' },
   fonts: { body: 'Helvetica Neue', heading: 'Helvetica Neue', mono: 'Menlo', size: 11 },
   headings: { numbered: false },
-  header: { left: { type: 'empty' }, center: { type: 'empty' }, right: { type: 'empty' }, rule: false, skipFirstPage: false },
+  header: { left: { type: 'empty' }, center: { type: 'empty' }, right: { type: 'empty' }, rule: false, skipFirstPage: false, textSize: null, bold: false },
   footer: {
     left: { type: 'empty' },
     center: { type: 'empty' },
     right: { type: 'text', value: '{page} / {pages}' },
     rule: false,
     skipFirstPage: false,
+    textSize: null,
+    bold: false,
   },
   logo: { file: null, height: 12 },
   cover: { enabled: false, showLogo: true, fields: ['title', 'subtitle', 'author', 'date'] },

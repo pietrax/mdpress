@@ -129,3 +129,15 @@ describe('validation issues carry translation keys', () => {
     expect(keysOf({ ...base, language: 'fr' })).toEqual([['language', 'validation.oneOf', { values: 'en, it' }]]);
   });
 });
+
+describe('band text options', () => {
+  it('default to automatic size and regular weight', () => {
+    const t = parseTemplate(base);
+    expect(t.footer.textSize).toBeNull();
+    expect(t.footer.bold).toBe(false);
+  });
+  it('validate the text size range', () => {
+    expect(() => parseTemplate({ ...base, footer: { textSize: 30 } })).toThrow();
+    expect(parseTemplate({ ...base, header: { textSize: 6.5, bold: true } }).header).toMatchObject({ textSize: 6.5, bold: true });
+  });
+});

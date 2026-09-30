@@ -87,8 +87,19 @@ export function BandEditor(props: { value: Band; onChange(v: Band): void; hasLog
           <SlotInput value={value[pos]} hasLogo={props.hasLogo} onChange={(slot) => onChange({ ...value, [pos]: slot })} />
         </Field>
       ))}
+      <Field label={tr('web.fields.textSize')} hint={tr('web.fields.textSizeHint')} error={props.issues[`${props.prefix}.textSize`]}>
+        <NumberInput
+          value={value.textSize ?? NaN}
+          min={5}
+          max={14}
+          step={0.5}
+          onChange={(v) => onChange({ ...value, textSize: Number.isNaN(v) ? null : v })}
+        />
+      </Field>
+      <Toggle label={tr('web.fields.bold')} checked={value.bold} onChange={(bold) => onChange({ ...value, bold })} />
       <Toggle label={tr('web.fields.rule')} checked={value.rule} onChange={(rule) => onChange({ ...value, rule })} />
       <Toggle label={tr('web.fields.skipFirstPage')} checked={value.skipFirstPage} onChange={(skipFirstPage) => onChange({ ...value, skipFirstPage })} />
+      <p className="hint">{tr('web.fields.centerOnlyHint')}</p>
     </div>
   );
 }
