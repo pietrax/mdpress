@@ -1,0 +1,266 @@
+{
+  "errors": {
+    "templateInvalid": "Invalid template",
+    "templateNotFound": "Template \"{ref}\" not found. Run \"mdpress templates list\" to see the available ones.",
+    "templateReadonly": "\"{name}\" is a built-in template: duplicate it to edit it",
+    "slugTaken": "A template with slug \"{slug}\" already exists",
+    "folderTaken": "A folder named \"{slug}\" already exists",
+    "logoType": "The logo must be a PNG or JPG file",
+    "logoTooLarge": "The logo is larger than 2 MB",
+    "zipInvalid": "The file is not a valid zip archive",
+    "zipNoTemplate": "The zip archive does not contain template.json",
+    "zipBadJson": "template.json is not valid JSON",
+    "configInvalid": "Invalid config.json: {path}",
+    "formatMissing": "Specify at least one format: pdf or docx",
+    "formatUnsupported": "Unsupported format: {format} (use pdf, docx or pdf,docx)",
+    "frontmatterInvalid": "Invalid YAML front-matter: {details}",
+    "fileNotFound": "File not found: {file}",
+    "renderFailed": "Rendering failed ({tool}): {details}",
+    "renderFailedWorkDir": "Rendering failed ({tool}): {details}\nWork directory: {dir}",
+    "dependenciesMissing": "Missing or outdated dependencies: {list}. Install them with: brew install pandoc typst",
+    "unsupportedLanguage": "Unsupported language: {lang} (supported: {supported})",
+    "languageMissing": "--lang needs a value ({supported})",
+    "portInvalid": "Invalid port: {port}",
+    "portInUse": "Port {port} is already in use: try --port {next}",
+    "logoUpload": "Upload a PNG or JPG logo",
+    "noLogo": "This template has no logo",
+    "zipUpload": "Upload a .zip file",
+    "markdownMissing": "Markdown is missing",
+    "internal": "Internal server error",
+    "hostNotAllowed": "Host not allowed",
+    "headerMissing": "Missing x-mdpress header",
+    "notFound": "Not found"
+  },
+  "validation": {
+    "notObject": "the template must be a JSON object",
+    "tooBig": "must be at most {max}",
+    "tooSmall": "must be at least {min}",
+    "tooLong": "at most {max} characters",
+    "required": "required",
+    "number": "enter a number",
+    "boolean": "must be yes or no",
+    "invalidType": "invalid type (expected {expected})",
+    "color": "invalid hex color (#rrggbb)",
+    "slug": "invalid slug: only a-z, 0-9 and hyphens",
+    "id": "invalid id",
+    "logoFile": "the logo must be named logo.png or logo.jpg",
+    "oneOf": "allowed values: {values}",
+    "invalid": "invalid value"
+  },
+  "warnings": {
+    "fontMissing": "Font not installed: {font} (using a fallback font)",
+    "imageNotFound": "Image not found, replaced by its alt text: {src}",
+    "imageUnreachable": "Image unreachable, replaced by its alt text: {src}",
+    "tool": "{details}"
+  },
+  "document": {
+    "tocTitle": "Contents"
+  },
+  "cli": {
+    "description": "Lay out Markdown as PDF and DOCX with customizable templates",
+    "errorPrefix": "Error: {message}",
+    "issueRoot": "(root)",
+    "unexpectedError": "Unexpected error: {details}",
+    "options": {
+      "lang": "interface language (en, it)",
+      "version": "output the version number",
+      "help": "display help for command",
+      "helpCommand": "display help for command"
+    },
+    "help": {
+      "usage": "Usage:",
+      "options": "Options:",
+      "globalOptions": "Global Options:",
+      "commands": "Commands:",
+      "arguments": "Arguments:",
+      "default": "default"
+    },
+    "parse": {
+      "unknownOption": "Unknown option '{token}'",
+      "unknownCommand": "Unknown command '{token}'",
+      "missingArgument": "Missing required argument '{token}'",
+      "optionMissingArgument": "Option '{token}' needs a value",
+      "excessArguments": "Too many arguments for '{token}'"
+    },
+    "render": {
+      "description": "Lay out a Markdown file",
+      "template": "template id or slug",
+      "format": "pdf, docx or pdf,docx",
+      "output": "output file or folder (with a trailing /)",
+      "toc": "include the table of contents",
+      "noToc": "exclude the table of contents",
+      "cover": "force the cover page",
+      "noCover": "exclude the cover page",
+      "debug": "keep the work directory",
+      "written": "✓ {path}",
+      "warning": "⚠ {message}",
+      "workDir": "Work directory: {dir}"
+    },
+    "templates": {
+      "description": "Manage the template catalog",
+      "list": "List templates",
+      "show": "Show a template's JSON",
+      "new": "Create a template (empty or a copy of another)",
+      "import": "Import a template from a .zip",
+      "export": "Export a template to a .zip",
+      "delete": "Delete a user template",
+      "default": "Show or set the default template",
+      "builtin": "(built-in)",
+      "from": "template to duplicate",
+      "name": "display name",
+      "exportOutput": "destination .zip file",
+      "created": "✓ created {slug} ({id}) in {dir}",
+      "imported": "✓ imported {slug} ({id})",
+      "exported": "✓ {path}",
+      "deleted": "✓ deleted {ref}",
+      "defaultReset": "The deleted template was the default: the default is back to standard.",
+      "defaultSet": "✓ default template: {slug} ({id})"
+    },
+    "serve": {
+      "description": "Start the local web interface",
+      "port": "port",
+      "noOpen": "do not open the browser",
+      "listening": "mdpress is listening on {url} (Ctrl+C to quit)"
+    },
+    "doctor": {
+      "description": "Check pandoc and typst",
+      "found": "{mark} {name} {version} (requires ≥ {min})",
+      "notFound": "{mark} {name} not found (requires ≥ {min})",
+      "install": "Install the dependencies with: brew install pandoc typst"
+    }
+  },
+  "web": {
+    "nav": {
+      "convert": "Convert",
+      "templates": "Templates"
+    },
+    "language": {
+      "label": "Language",
+      "names": {
+        "en": "English",
+        "it": "Italian"
+      }
+    },
+    "deps": {
+      "missing": "Missing dependencies: {names}.",
+      "install": "Install with"
+    },
+    "errors": {
+      "http": "Error {status}",
+      "network": "Cannot reach the server",
+      "logoType": "The logo must be a PNG or JPG",
+      "unsavedChanges": "You have unsaved changes. Leave anyway?"
+    },
+    "convert": {
+      "document": "1. Document",
+      "dropHint": "Drop a .md file here or",
+      "choose": "choose one",
+      "pastePlaceholder": "…or paste the Markdown here",
+      "relativeImagesHint": "Images with relative paths are not available here: use the CLI.",
+      "template": "2. Template",
+      "options": "3. Options",
+      "includeToc": "Include table of contents",
+      "cover": "Cover",
+      "coverAuto": "As per template",
+      "coverOn": "Yes",
+      "coverOff": "No",
+      "downloadPdf": "Download PDF",
+      "downloadDocx": "Download DOCX",
+      "updatingPreview": "Updating preview…",
+      "previewEmpty": "The PDF preview will appear here.",
+      "previewTitle": "PDF preview"
+    },
+    "catalog": {
+      "newPlaceholder": "Name of the new template",
+      "create": "Create",
+      "import": "Import .zip",
+      "builtin": "built-in",
+      "open": "Open",
+      "edit": "Edit",
+      "duplicate": "Duplicate",
+      "export": "Export",
+      "delete": "Delete",
+      "copyPrompt": "Name of the copy",
+      "copyDefaultName": "{name} (copy)",
+      "deleteConfirm": "Delete the template \"{name}\"?"
+    },
+    "editor": {
+      "back": "← Catalogue",
+      "readonlyBadge": "built-in, read-only",
+      "duplicateToEdit": "Duplicate to edit",
+      "save": "Save",
+      "saved": "Template saved",
+      "general": "General",
+      "name": "Name",
+      "slug": "Slug",
+      "slugHint": "From the CLI: mdpress render doc.md -t {slug}",
+      "description": "Description",
+      "documentLanguage": "Document language",
+      "page": "Page",
+      "size": "Size",
+      "orientation": "Orientation",
+      "portrait": "Portrait",
+      "landscape": "Landscape",
+      "margin": "{side} margin (mm)",
+      "sides": {
+        "top": "Top",
+        "bottom": "Bottom",
+        "left": "Left",
+        "right": "Right"
+      },
+      "colors": "Colors",
+      "colorNames": {
+        "text": "Text",
+        "heading": "Headings",
+        "accent": "Accent",
+        "muted": "Muted"
+      },
+      "fonts": "Fonts",
+      "fontNames": {
+        "body": "Body font",
+        "heading": "Heading font",
+        "mono": "Code font"
+      },
+      "fontSize": "Body size (pt)",
+      "numberedHeadings": "Numbered headings (1, 1.1, 1.1.1)",
+      "logo": "Logo",
+      "noLogo": "No logo",
+      "uploadLogo": "Upload PNG/JPG",
+      "removeLogo": "Remove",
+      "logoHeight": "Logo height in the header (mm)",
+      "logoHeightHint": "On the cover the logo is twice as tall",
+      "header": "Header",
+      "footer": "Footer",
+      "placeholders": "Available placeholders: {list}",
+      "cover": "Cover",
+      "coverEnabled": "Cover enabled by default",
+      "coverLogo": "Logo on the cover",
+      "coverFields": {
+        "title": "Title",
+        "subtitle": "Subtitle",
+        "author": "Author",
+        "date": "Date"
+      },
+      "blocks": "Blocks",
+      "stripedTables": "Striped table rows",
+      "quoteBar": "Colored bar on quotes",
+      "codeBackground": "Code block background",
+      "previewTitle": "Preview",
+      "previewHint": "PDF preview. The DOCX uses the same colors and fonts as Word styles.",
+      "generatingPreview": "Generating preview…"
+    },
+    "fields": {
+      "slotEmpty": "Empty",
+      "slotText": "Text",
+      "slotLogo": "Logo",
+      "slotPlaceholder": "e.g. {title} · {page}/{pages}",
+      "positions": {
+        "left": "Left",
+        "center": "Center",
+        "right": "Right"
+      },
+      "rule": "Rule",
+      "skipFirstPage": "Hide on the first page"
+    }
+  }
+}

@@ -28,7 +28,7 @@ export function compareVersions(a: string, b: string): number {
 }
 
 export function formatDep(s: DepStatus): string {
-  return s.found ? `${s.name} ${s.version ?? '?'} (richiesta ≥ ${s.min})` : `${s.name} (non trovato)`;
+  return s.found ? `${s.name} ${s.version ?? '?'} (≥ ${s.min})` : `${s.name} ✗`;
 }
 
 async function probe(name: DepName): Promise<DepStatus> {
@@ -52,9 +52,6 @@ export function checkDeps(fresh = false): Promise<DepStatus[]> {
 export async function assertDeps(): Promise<void> {
   const bad = (await checkDeps()).filter((s) => !s.ok);
   if (bad.length > 0) {
-    throw new MdpressError(
-      `Dipendenze mancanti o troppo vecchie: ${bad.map(formatDep).join(', ')}. Installa con: brew install pandoc typst`,
-      'DEPENDENCY_MISSING',
-    );
+    throw new MdpressError('errors.dependenciesMissing', 'DEPENDENCY_MISSING', { list: bad.map(formatDep).join(', ') });
   }
 }

@@ -30,6 +30,7 @@ code { background: var(--accent-soft); padding: 1px 4px; border-radius: 4px; }
 .topbar nav { display: flex; gap: 4px; }
 .topbar nav button { border-color: transparent; }
 .topbar nav button.active { background: var(--accent-soft); color: var(--accent); }
+.topbar select { width: auto; margin-left: auto; }
 .brand { font-size: 18px; color: var(--accent); }
 .banner { background: #fff8c5; border-bottom: 1px solid #d4a72c; padding: 8px 20px; }
 main { padding: 20px; }

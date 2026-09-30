@@ -1,73 +1,88 @@
 # mdpress
 
-Impagina un file Markdown con un template e lo esporta in **PDF** e **DOCX**.
-I template (colori, font, testata, piè di pagina, logo, copertina) si creano da
-un'interfaccia web, senza scrivere codice.
+Lay out a Markdown file with a template and export it to **PDF** and **DOCX**.
+Templates (colors, fonts, header, footer, logo, cover page) are created from a
+web interface, without writing code.
 
-## Installazione
+## Installation
 
 ```sh
 brew install pietrax/tap/mdpress
 mdpress doctor
 ```
 
-Homebrew installa anche `pandoc` e `typst`. Requisiti: Node ≥ 22.12, `pandoc` ≥ 3.1.2, `typst` ≥ 0.12.
+Homebrew also installs `pandoc` and `typst`. Requirements: Node ≥ 22.12, `pandoc` ≥ 3.1.2, `typst` ≥ 0.12.
 
-## Uso da terminale
+## Command line
 
 ```sh
-mdpress render relazione.md                     # PDF col template di default
-mdpress render relazione.md -t report -f pdf,docx --toc
-mdpress render relazione.md -o out/             # scrive in out/relazione.pdf
+mdpress render report.md                      # PDF with the default template
+mdpress render report.md -t report -f pdf,docx --toc
+mdpress render report.md -o out/              # writes out/report.pdf
 mdpress templates list
 mdpress templates default report
 ```
 
-Nel front-matter puoi indicare titolo, sottotitolo, autore e data, e forzare
-indice o copertina:
+The front-matter can set the title, subtitle, author and date, and force the table
+of contents or the cover page:
 
 ```yaml
 ---
-title: Relazione trimestrale
+title: Quarterly report
 subtitle: Q3 2026
-author: Mario Rossi
-date: 30 settembre 2026
+author: Jane Doe
+date: September 30, 2026
 toc: true
 cover: true
 ---
 ```
 
-Le opzioni da riga di comando (`--toc`, `--no-cover`…) prevalgono sul front-matter.
+Command-line options (`--toc`, `--no-cover`…) take precedence over the front-matter.
 
-## Interfaccia web
+## Web interface
 
 ```sh
 mdpress serve
 ```
 
-Si apre il browser su `http://127.0.0.1:4321`:
+Opens the browser at `http://127.0.0.1:4321`:
 
-- **Converti**: trascina un `.md`, scegli il template, scarica PDF o DOCX;
-- **Template**: crea, duplica, modifica con anteprima live, importa ed esporta (`.zip`).
+- **Convert**: drop a `.md` file, pick a template, download PDF or DOCX;
+- **Templates**: create, duplicate, edit with a live preview, import and export (`.zip`).
 
-I template creati finiscono in `~/.config/mdpress/templates/` e sono subito
-usabili anche da terminale con `-t <slug>`.
+Templates are stored in `~/.config/mdpress/templates/` and can be used right away from
+the command line with `-t <slug>`.
 
-## Condividere un template
+## Languages
+
+The interface is available in English and Italian:
+
+- command line: `--lang it`, or `"language": "it"` in `~/.config/mdpress/config.json`,
+  or an Italian system locale (`LANG=it_IT.UTF-8`);
+- web interface: the selector in the top bar (the choice is saved for the command line too).
+
+The language of the documents (hyphenation, table-of-contents title, Word proofing
+language) is a template setting: *Document language* in the editor, `"language"` in
+`template.json`.
+
+## Sharing a template
 
 ```sh
-mdpress templates export aziendale-blu -o aziendale-blu.zip
-mdpress templates import aziendale-blu.zip
+mdpress templates export corporate -o corporate.zip
+mdpress templates import corporate.zip
 ```
 
-## Sviluppo
+## Development
 
 ```sh
 npm install
 npm test
-npm run dev -- render assets/sample.md      # CLI senza build
-npm run build && ./bin/mdpress.js serve     # UI buildata
+npm run check:lang                         # no Italian outside src/i18n/locales/it.json
+npm run dev -- render assets/sample.md     # CLI without a build
+npm run build && ./bin/mdpress.js serve    # built UI
 ```
 
-Per rilasciare: aggiorna `version` in `package.json`, poi `git tag vX.Y.Z && git push --tags`.
-Il workflow crea la release e apre una PR sul tap (serve il secret `TAP_GITHUB_TOKEN`).
+Translations live in `src/i18n/locales/` (`en.json` is the reference).
+
+To release: bump `version` in `package.json`, then `git tag vX.Y.Z && git push --tags`.
+The workflow creates the release and opens a PR on the tap (it needs the `TAP_GITHUB_TOKEN` secret).

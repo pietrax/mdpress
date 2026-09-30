@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { Slot } from '../../../src/core/theme.js';
 import type { Template } from '../api';
+import { useI18n } from '../i18n';
 
 export function Field({ label, error, hint, children }: { label: string; error?: string; hint?: string; children: ReactNode }) {
   return (
@@ -45,6 +46,7 @@ export function Toggle({ label, checked, onChange }: { label: string; checked: b
 }
 
 export function SlotInput({ value, onChange, hasLogo }: { value: Slot; onChange(v: Slot): void; hasLogo: boolean }) {
+  const { t: tr } = useI18n();
   return (
     <span className="slot">
       <select
@@ -54,17 +56,17 @@ export function SlotInput({ value, onChange, hasLogo }: { value: Slot; onChange(
           onChange(type === 'text' ? { type, value: value.type === 'text' ? value.value : '' } : { type });
         }}
       >
-        <option value="empty">Vuoto</option>
-        <option value="text">Testo</option>
+        <option value="empty">{tr('web.fields.slotEmpty')}</option>
+        <option value="text">{tr('web.fields.slotText')}</option>
         <option value="logo" disabled={!hasLogo}>
-          Logo
+          {tr('web.fields.slotLogo')}
         </option>
       </select>
       {value.type === 'text' && (
         <input
           type="text"
           value={value.value}
-          placeholder="es. {title} · {page}/{pages}"
+          placeholder={tr('web.fields.slotPlaceholder')}
           onChange={(e) => onChange({ type: 'text', value: e.target.value })}
         />
       )}
@@ -73,23 +75,20 @@ export function SlotInput({ value, onChange, hasLogo }: { value: Slot; onChange(
 }
 
 type Band = Template['header'];
-const POSITIONS = [
-  ['left', 'Sinistra'],
-  ['center', 'Centro'],
-  ['right', 'Destra'],
-] as const;
+const POSITIONS = ['left', 'center', 'right'] as const;
 
 export function BandEditor(props: { value: Band; onChange(v: Band): void; hasLogo: boolean; issues: Record<string, string>; prefix: string }) {
   const { value, onChange } = props;
+  const { t: tr } = useI18n();
   return (
     <div className="band">
-      {POSITIONS.map(([pos, label]) => (
-        <Field key={pos} label={label} error={props.issues[`${props.prefix}.${pos}.value`]}>
+      {POSITIONS.map((pos) => (
+        <Field key={pos} label={tr(`web.fields.positions.${pos}`)} error={props.issues[`${props.prefix}.${pos}.value`]}>
           <SlotInput value={value[pos]} hasLogo={props.hasLogo} onChange={(slot) => onChange({ ...value, [pos]: slot })} />
         </Field>
       ))}
-      <Toggle label="Filetto" checked={value.rule} onChange={(rule) => onChange({ ...value, rule })} />
-      <Toggle label="Nascondi sulla prima pagina" checked={value.skipFirstPage} onChange={(skipFirstPage) => onChange({ ...value, skipFirstPage })} />
+      <Toggle label={tr('web.fields.rule')} checked={value.rule} onChange={(rule) => onChange({ ...value, rule })} />
+      <Toggle label={tr('web.fields.skipFirstPage')} checked={value.skipFirstPage} onChange={(skipFirstPage) => onChange({ ...value, skipFirstPage })} />
     </div>
   );
 }

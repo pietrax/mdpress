@@ -1,0 +1,266 @@
+{
+  "errors": {
+    "templateInvalid": "Template non valido",
+    "templateNotFound": "Template \"{ref}\" non trovato. Usa \"mdpress templates list\" per vedere quelli disponibili.",
+    "templateReadonly": "\"{name}\" è un template built-in: duplicalo per modificarlo",
+    "slugTaken": "Esiste già un template con slug \"{slug}\"",
+    "folderTaken": "Esiste già una cartella \"{slug}\"",
+    "logoType": "Il logo deve essere un file PNG o JPG",
+    "logoTooLarge": "Il logo supera i 2 MB",
+    "zipInvalid": "Il file non è uno zip valido",
+    "zipNoTemplate": "Lo zip non contiene template.json",
+    "zipBadJson": "template.json non è un JSON valido",
+    "configInvalid": "config.json non valido: {path}",
+    "formatMissing": "Indica almeno un formato: pdf o docx",
+    "formatUnsupported": "Formato non supportato: {format} (usa pdf, docx o pdf,docx)",
+    "frontmatterInvalid": "Front-matter YAML non valido: {details}",
+    "fileNotFound": "File non trovato: {file}",
+    "renderFailed": "Rendering fallito ({tool}): {details}",
+    "renderFailedWorkDir": "Rendering fallito ({tool}): {details}\nCartella di lavoro: {dir}",
+    "dependenciesMissing": "Dipendenze mancanti o troppo vecchie: {list}. Installa con: brew install pandoc typst",
+    "unsupportedLanguage": "Lingua non supportata: {lang} (disponibili: {supported})",
+    "languageMissing": "--lang richiede un valore ({supported})",
+    "portInvalid": "Porta non valida: {port}",
+    "portInUse": "La porta {port} è già in uso: prova con --port {next}",
+    "logoUpload": "Carica un logo PNG o JPG",
+    "noLogo": "Questo template non ha un logo",
+    "zipUpload": "Carica un file .zip",
+    "markdownMissing": "Markdown mancante",
+    "internal": "Errore interno del server",
+    "hostNotAllowed": "Host non consentito",
+    "headerMissing": "Header x-mdpress mancante",
+    "notFound": "Non trovato"
+  },
+  "validation": {
+    "notObject": "il template deve essere un oggetto JSON",
+    "tooBig": "deve essere al massimo {max}",
+    "tooSmall": "deve essere almeno {min}",
+    "tooLong": "al massimo {max} caratteri",
+    "required": "campo obbligatorio",
+    "number": "inserisci un numero",
+    "boolean": "indica sì o no",
+    "invalidType": "tipo non valido (atteso {expected})",
+    "color": "colore esadecimale non valido (#rrggbb)",
+    "slug": "slug non valido: solo a-z, 0-9 e trattini",
+    "id": "id non valido",
+    "logoFile": "il logo deve chiamarsi logo.png o logo.jpg",
+    "oneOf": "valori ammessi: {values}",
+    "invalid": "valore non valido"
+  },
+  "warnings": {
+    "fontMissing": "Font non installato: {font} (uso un font di ripiego)",
+    "imageNotFound": "Immagine non trovata, sostituita dal testo alternativo: {src}",
+    "imageUnreachable": "Immagine non raggiungibile, sostituita dal testo alternativo: {src}",
+    "tool": "{details}"
+  },
+  "document": {
+    "tocTitle": "Indice"
+  },
+  "cli": {
+    "description": "Impagina Markdown in PDF e DOCX con template personalizzabili",
+    "errorPrefix": "Errore: {message}",
+    "issueRoot": "(radice)",
+    "unexpectedError": "Errore inatteso: {details}",
+    "options": {
+      "lang": "lingua dell’interfaccia (en, it)",
+      "version": "mostra il numero di versione",
+      "help": "mostra la guida del comando",
+      "helpCommand": "mostra la guida del comando"
+    },
+    "help": {
+      "usage": "Uso:",
+      "options": "Opzioni:",
+      "globalOptions": "Opzioni globali:",
+      "commands": "Comandi:",
+      "arguments": "Argomenti:",
+      "default": "predefinito"
+    },
+    "parse": {
+      "unknownOption": "Opzione sconosciuta '{token}'",
+      "unknownCommand": "Comando sconosciuto '{token}'",
+      "missingArgument": "Argomento obbligatorio mancante '{token}'",
+      "optionMissingArgument": "L’opzione '{token}' richiede un valore",
+      "excessArguments": "Troppi argomenti per '{token}'"
+    },
+    "render": {
+      "description": "Impagina un file Markdown",
+      "template": "id o slug del template",
+      "format": "pdf, docx o pdf,docx",
+      "output": "file o cartella (con / finale) di destinazione",
+      "toc": "includi l’indice",
+      "noToc": "escludi l’indice",
+      "cover": "forza la copertina",
+      "noCover": "escludi la copertina",
+      "debug": "conserva la cartella di lavoro",
+      "written": "✓ {path}",
+      "warning": "⚠ {message}",
+      "workDir": "Cartella di lavoro: {dir}"
+    },
+    "templates": {
+      "description": "Gestisce il catalogo dei template",
+      "list": "Elenca i template",
+      "show": "Mostra il JSON di un template",
+      "new": "Crea un template (vuoto o copia di un altro)",
+      "import": "Importa un template da .zip",
+      "export": "Esporta un template in .zip",
+      "delete": "Elimina un template utente",
+      "default": "Mostra o imposta il template di default",
+      "builtin": "(built-in)",
+      "from": "template da duplicare",
+      "name": "nome leggibile",
+      "exportOutput": "file .zip di destinazione",
+      "created": "✓ creato {slug} ({id}) in {dir}",
+      "imported": "✓ importato {slug} ({id})",
+      "exported": "✓ {path}",
+      "deleted": "✓ eliminato {ref}",
+      "defaultReset": "Il template eliminato era quello di default: il default è tornato a standard.",
+      "defaultSet": "✓ template di default: {slug} ({id})"
+    },
+    "serve": {
+      "description": "Avvia l’interfaccia web locale",
+      "port": "porta",
+      "noOpen": "non aprire il browser",
+      "listening": "mdpress è in ascolto su {url} (Ctrl+C per uscire)"
+    },
+    "doctor": {
+      "description": "Verifica pandoc e typst",
+      "found": "{mark} {name} {version} (richiesta ≥ {min})",
+      "notFound": "{mark} {name} non trovato (richiesta ≥ {min})",
+      "install": "Installa le dipendenze con: brew install pandoc typst"
+    }
+  },
+  "web": {
+    "nav": {
+      "convert": "Converti",
+      "templates": "Template"
+    },
+    "language": {
+      "label": "Lingua",
+      "names": {
+        "en": "Inglese",
+        "it": "Italiano"
+      }
+    },
+    "deps": {
+      "missing": "Dipendenze mancanti: {names}.",
+      "install": "Installa con"
+    },
+    "errors": {
+      "http": "Errore {status}",
+      "network": "Impossibile raggiungere il server",
+      "logoType": "Il logo deve essere PNG o JPG",
+      "unsavedChanges": "Ci sono modifiche non salvate. Uscire comunque?"
+    },
+    "convert": {
+      "document": "1. Documento",
+      "dropHint": "Trascina qui un file .md oppure",
+      "choose": "sceglilo",
+      "pastePlaceholder": "…o incolla qui il Markdown",
+      "relativeImagesHint": "Le immagini con percorso relativo non sono disponibili da qui: usa la CLI.",
+      "template": "2. Template",
+      "options": "3. Opzioni",
+      "includeToc": "Includi indice",
+      "cover": "Copertina",
+      "coverAuto": "Come da template",
+      "coverOn": "Sì",
+      "coverOff": "No",
+      "downloadPdf": "Scarica PDF",
+      "downloadDocx": "Scarica DOCX",
+      "updatingPreview": "Aggiorno l’anteprima…",
+      "previewEmpty": "L’anteprima del PDF comparirà qui.",
+      "previewTitle": "Anteprima PDF"
+    },
+    "catalog": {
+      "newPlaceholder": "Nome del nuovo template",
+      "create": "Crea",
+      "import": "Importa .zip",
+      "builtin": "built-in",
+      "open": "Apri",
+      "edit": "Modifica",
+      "duplicate": "Duplica",
+      "export": "Esporta",
+      "delete": "Elimina",
+      "copyPrompt": "Nome della copia",
+      "copyDefaultName": "{name} (copia)",
+      "deleteConfirm": "Eliminare il template \"{name}\"?"
+    },
+    "editor": {
+      "back": "← Catalogo",
+      "readonlyBadge": "built-in, sola lettura",
+      "duplicateToEdit": "Duplica per modificare",
+      "save": "Salva",
+      "saved": "Template salvato",
+      "general": "Generale",
+      "name": "Nome",
+      "slug": "Slug",
+      "slugHint": "Da CLI: mdpress render doc.md -t {slug}",
+      "description": "Descrizione",
+      "documentLanguage": "Lingua del documento",
+      "page": "Pagina",
+      "size": "Formato",
+      "orientation": "Orientamento",
+      "portrait": "Verticale",
+      "landscape": "Orizzontale",
+      "margin": "Margine {side} (mm)",
+      "sides": {
+        "top": "superiore",
+        "bottom": "inferiore",
+        "left": "sinistro",
+        "right": "destro"
+      },
+      "colors": "Colori",
+      "colorNames": {
+        "text": "Testo",
+        "heading": "Titoli",
+        "accent": "Accento",
+        "muted": "Secondario"
+      },
+      "fonts": "Font",
+      "fontNames": {
+        "body": "Font del testo",
+        "heading": "Font dei titoli",
+        "mono": "Font del codice"
+      },
+      "fontSize": "Corpo (pt)",
+      "numberedHeadings": "Titoli numerati (1, 1.1, 1.1.1)",
+      "logo": "Logo",
+      "noLogo": "Nessun logo",
+      "uploadLogo": "Carica PNG/JPG",
+      "removeLogo": "Rimuovi",
+      "logoHeight": "Altezza del logo in testata (mm)",
+      "logoHeightHint": "In copertina il logo è alto il doppio",
+      "header": "Testata",
+      "footer": "Piè di pagina",
+      "placeholders": "Segnaposto disponibili: {list}",
+      "cover": "Copertina",
+      "coverEnabled": "Copertina attiva di default",
+      "coverLogo": "Logo in copertina",
+      "coverFields": {
+        "title": "Titolo",
+        "subtitle": "Sottotitolo",
+        "author": "Autore",
+        "date": "Data"
+      },
+      "blocks": "Blocchi",
+      "stripedTables": "Tabelle a righe alternate",
+      "quoteBar": "Barra colorata sulle citazioni",
+      "codeBackground": "Sfondo dei blocchi di codice",
+      "previewTitle": "Anteprima",
+      "previewHint": "Anteprima del PDF. Il DOCX usa gli stessi colori e font come stili di Word.",
+      "generatingPreview": "Genero l’anteprima…"
+    },
+    "fields": {
+      "slotEmpty": "Vuoto",
+      "slotText": "Testo",
+      "slotLogo": "Logo",
+      "slotPlaceholder": "es. {title} · {page}/{pages}",
+      "positions": {
+        "left": "Sinistra",
+        "center": "Centro",
+        "right": "Destra"
+      },
+      "rule": "Filetto",
+      "skipFirstPage": "Nascondi sulla prima pagina"
+    }
+  }
+}

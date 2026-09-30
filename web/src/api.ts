@@ -1,10 +1,13 @@
 import type { Template } from '../../src/core/theme.js';
+import { t, type Language } from '../../src/i18n/index.js';
 
 export type { Template };
 export type TemplateSummary = Template & { builtin: boolean; hasLogo: boolean };
 
 export interface Issue {
   path: string;
+  key: string;
+  params: Record<string, string | number>;
   message: string;
 }
 
@@ -35,19 +38,32 @@ export class ApiError extends Error {
   }
 }
 
+let currentLanguage: Language = 'en';
+
+/** Language sent to the server so its error messages come back translated. */
+export function setApiLanguage(lang: Language): void {
+  currentLanguage = lang;
+}
+
 async function request(path: string, init: RequestInit = {}): Promise<Response> {
   const headers = new Headers(init.headers);
   headers.set('x-mdpress', '1');
+  headers.set('x-mdpress-lang', currentLanguage);
   if (typeof init.body === 'string') headers.set('content-type', 'application/json');
-  const res = await fetch(path, { ...init, headers });
+  let res: Response;
+  try {
+    res = await fetch(path, { ...init, headers });
+  } catch {
+    throw new ApiError(t('web.errors.network', {}, currentLanguage), 0);
+  }
   if (!res.ok) {
     let body: { error?: string; errors?: Issue[] } = {};
     try {
       body = await res.json();
     } catch {
-      /* risposta non JSON */
+      /* not a JSON response */
     }
-    throw new ApiError(body.error ?? `Errore ${res.status}`, res.status, body.errors ?? []);
+    throw new ApiError(body.error ?? t('web.errors.http', { status: res.status }, currentLanguage), res.status, body.errors ?? []);
   }
   return res;
 }
@@ -59,7 +75,12 @@ async function json<T>(path: string, init?: RequestInit): Promise<T> {
 function filenameFrom(res: Response, fallback: string): string {
   const header = res.headers.get('content-disposition') ?? '';
   const m = /filename\*=UTF-8''([^;]+)/.exec(header);
-  return m ? decodeURIComponent(m[1]) : fallback;
+  if (!m) return fallback;
+  try {
+    return decodeURIComponent(m[1]);
+  } catch {
+    return fallback;
+  }
 }
 
 function warningsFrom(res: Response): string[] {
@@ -97,6 +118,9 @@ export const api = {
     const fallback = `${body.filename.replace(/\.(md|markdown)$/i, '')}.${body.format}`;
     return { blob: await res.blob(), filename: filenameFrom(res, fallback), warnings: warningsFrom(res) };
   },
+  settings: () => json<{ language: string }>('/api/settings'),
+  saveSettings: (s: { language: Language }) =>
+    json<{ language: string }>('/api/settings', { method: 'PUT', body: JSON.stringify(s) }),
   fonts: () => json<string[]>('/api/fonts'),
   doctor: () => json<DepStatus[]>('/api/doctor'),
 };

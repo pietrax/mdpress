@@ -9,7 +9,7 @@ export function saveBlob(blob: Blob, filename: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/** Come useEffect, ma esegue l'effetto solo dopo `delay` ms senza cambi delle dipendenze. */
+/** Like useEffect, but runs the effect only after `delay` ms without dependency changes. */
 export function useDebouncedEffect(effect: () => void | (() => void), deps: DependencyList, delay: number): void {
   useEffect(() => {
     let cleanup: void | (() => void);
@@ -24,7 +24,7 @@ export function useDebouncedEffect(effect: () => void | (() => void), deps: Depe
   }, deps);
 }
 
-/** URL blob: per l'anteprima, revocato automaticamente quando cambia. */
+/** Blob URL for the preview, revoked automatically when it changes. */
 export function useObjectUrl(): [string | null, (blob: Blob | null) => void] {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(

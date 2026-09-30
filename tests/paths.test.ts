@@ -12,24 +12,24 @@ afterEach(() => {
 });
 
 describe('paths', () => {
-  it('packageRoot è la radice del pacchetto', () => {
+  it('packageRoot is the package root', () => {
     expect(existsSync(join(packageRoot, 'package.json'))).toBe(true);
   });
-  it('usa ~/.config/mdpress di default', () => {
+  it('defaults to ~/.config/mdpress', () => {
     delete process.env.MDPRESS_HOME;
     expect(mdpressHome()).toBe(join(homedir(), '.config', 'mdpress'));
   });
-  it('MDPRESS_HOME sovrascrive la radice', () => {
-    process.env.MDPRESS_HOME = '/tmp/casa';
-    expect(userTemplatesDir()).toBe('/tmp/casa/templates');
-    expect(configPath()).toBe('/tmp/casa/config.json');
+  it('MDPRESS_HOME overrides the root', () => {
+    process.env.MDPRESS_HOME = '/tmp/home';
+    expect(userTemplatesDir()).toBe('/tmp/home/templates');
+    expect(configPath()).toBe('/tmp/home/config.json');
   });
 });
 
 describe('errors', () => {
-  it('exitCodeFor: 2 per dipendenze mancanti, 1 altrimenti', () => {
-    expect(exitCodeFor(new MdpressError('x', 'DEPENDENCY_MISSING'))).toBe(2);
-    expect(exitCodeFor(new MdpressError('x', 'BAD_INPUT'))).toBe(1);
+  it('exitCodeFor: 2 for missing dependencies, 1 otherwise', () => {
+    expect(exitCodeFor(new MdpressError('errors.dependenciesMissing', 'DEPENDENCY_MISSING', { list: 'x' }))).toBe(2);
+    expect(exitCodeFor(new MdpressError('errors.formatMissing', 'BAD_INPUT'))).toBe(1);
     expect(exitCodeFor(new Error('x'))).toBe(1);
   });
 });

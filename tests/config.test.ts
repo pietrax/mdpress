@@ -10,7 +10,7 @@ afterEach(() => {
   else process.env.MDPRESS_HOME = saved;
 });
 
-it('senza config usa standard, poi salva il default scelto', async () => {
+it('without a config uses standard, then saves the chosen default', async () => {
   process.env.MDPRESS_HOME = join(await tempDir(), 'home');
   expect(await readConfig()).toEqual({});
   expect(await defaultTemplateRef()).toBe('standard');
@@ -18,9 +18,9 @@ it('senza config usa standard, poi salva il default scelto', async () => {
   expect(await defaultTemplateRef()).toBe('abc12345');
 });
 
-it('config.json corrotto dà un errore chiaro', async () => {
+it('a corrupted config.json gives a clear error', async () => {
   const home = await tempDir();
   process.env.MDPRESS_HOME = home;
-  await writeFile(join(home, 'config.json'), '{ rotto');
-  await expect(readConfig()).rejects.toThrow(/config\.json non valido/);
+  await writeFile(join(home, 'config.json'), '{ broken');
+  await expect(readConfig()).rejects.toMatchObject({ key: 'errors.configInvalid', code: 'BAD_INPUT' });
 });

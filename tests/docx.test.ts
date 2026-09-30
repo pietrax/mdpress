@@ -44,16 +44,16 @@ async function build(over: Record<string, unknown> = {}, extra: Partial<DocxCont
 }
 
 describe('xmlEscape', () => {
-  it('escapa i caratteri XML', () => {
+  it('escapes XML characters', () => {
     expect(xmlEscape(`a&b<c>"d"`)).toBe('a&amp;b&lt;c&gt;&quot;d&quot;');
   });
-  it('rimuove i caratteri di controllo illegali in XML 1.0', () => {
+  it('removes control characters that are illegal in XML 1.0', () => {
     expect(xmlEscape('a\x01b\x0bc')).toBe('abc');
   });
 });
 
 describe('buildReferenceDocx', () => {
-  it('sostituisce gli stili una sola volta e imposta font e colori', async () => {
+  it('replaces styles exactly once and sets fonts and colours', async () => {
     const { text } = await build({ fonts: { body: 'Georgia' }, colors: { heading: '#0b3d91' } });
     const styles = await text('word/styles.xml');
     expect(styles.match(/w:styleId="Heading1"/g)).toHaveLength(1);
@@ -64,14 +64,14 @@ describe('buildReferenceDocx', () => {
     expect(styles).toContain('w:styleId="TOCHeading"');
   });
 
-  it('un $ nel nome del font non corrompe styles.xml', async () => {
+  it('a $ in the font name does not corrupt styles.xml', async () => {
     const { text } = await build({ fonts: { body: 'A$&B$$C' } });
     const styles = await text('word/styles.xml');
     expect(styles).toContain('w:ascii="A$&amp;B$$C"');
     expect(styles.match(/w:styleId="Heading1"/g)).toHaveLength(1);
   });
 
-  it('standard: solo il footer con i campi PAGE e NUMPAGES', async () => {
+  it('standard: only the footer with PAGE and NUMPAGES fields', async () => {
     const { text } = await build();
     expect(await text('word/header1.xml')).toBe('');
     const footer = await text('word/footer1.xml');
@@ -81,14 +81,14 @@ describe('buildReferenceDocx', () => {
     expect(await text('[Content_Types].xml')).toContain('/word/footer1.xml');
   });
 
-  it('i segnaposto della testata diventano testo escapato', async () => {
+  it('header placeholders become escaped text', async () => {
     const { text } = await build({ header: { right: { type: 'text', value: '{title} · {author} · {subtitle}' } } });
     const header = await text('word/header1.xml');
     expect(header).toContain('Report &amp; co');
     expect(header).toContain('Ada &lt;Lovelace&gt;');
   });
 
-  it('sectPr: A4, margini in twip, titlePg con skipFirstPage', async () => {
+  it('sectPr: A4, margins in twips, titlePg with skipFirstPage', async () => {
     const { text } = await build({ footer: { skipFirstPage: true } });
     const doc = await text('word/document.xml');
     expect(doc).toContain('<w:pgSz w:w="11906" w:h="16838"/>');
@@ -98,7 +98,7 @@ describe('buildReferenceDocx', () => {
     expect(doc).not.toContain('footnotePr');
   });
 
-  it('con la copertina la prima pagina è senza testata e piè di pagina anche se skipFirstPage è false', async () => {
+  it('with a cover the first page has no header or footer even if skipFirstPage is false', async () => {
     const { text } = await build({ header: { right: { type: 'text', value: 'x' } } }, { cover: true });
     const doc = await text('word/document.xml');
     expect(doc).toContain('<w:titlePg/>');
@@ -106,12 +106,12 @@ describe('buildReferenceDocx', () => {
     expect(doc).not.toContain('w:type="first"');
   });
 
-  it('orizzontale: scambia le dimensioni', async () => {
+  it('landscape: swaps the dimensions', async () => {
     const { text } = await build({ page: { orientation: 'landscape' } });
     expect(await text('word/document.xml')).toContain('<w:pgSz w:w="16838" w:h="11906" w:orient="landscape"/>');
   });
 
-  it('logo in testata: media, relazioni, content type e dimensioni', async () => {
+  it('logo in the header: media, relationships, content type and size', async () => {
     const { docx, text } = await build(
       { header: { left: { type: 'logo' } } },
       { logo: { data: makePng(30, 10), ext: 'png' } },
@@ -124,23 +124,28 @@ describe('buildReferenceDocx', () => {
     expect(header).toContain('cx="1296000"');
   });
 
-  it('con la copertina il titolo è distanziato e l’indice va a pagina nuova', async () => {
+  it('with a cover the title is spaced out and the table of contents starts a new page', async () => {
     const { text } = await build({}, { cover: true });
     const styles = await text('word/styles.xml');
     expect(styles).toMatch(/w:styleId="Title"[\s\S]*?w:before="2400"/);
     expect(styles).toMatch(/w:styleId="TOCHeading"[\s\S]*?<w:pageBreakBefore\/>/);
   });
+
+  it('sets the Word proofing language from the template', async () => {
+    expect(await (await build()).text('word/styles.xml')).toContain('w:val="en-US"');
+    expect(await (await build({ language: 'it' })).text('word/styles.xml')).toContain('w:val="it-IT"');
+  });
 });
 
 describe('finalizeDocx', () => {
-  it('aggiunge updateFields prima di w:compat, una sola volta', async () => {
+  it('adds updateFields before w:compat, only once', async () => {
     const once = await finalizeDocx(await minimalBase(), { updateFields: true });
     const twice = await finalizeDocx(once, { updateFields: true });
     const settings = (await unzipText(twice, 'word/settings.xml')) ?? '';
     expect(settings.match(/w:updateFields/g)).toHaveLength(1);
     expect(settings.indexOf('w:updateFields')).toBeLessThan(settings.indexOf('<w:compat'));
   });
-  it('senza indice non cambia nulla', async () => {
+  it('without a table of contents nothing changes', async () => {
     const base = await minimalBase();
     expect(await finalizeDocx(base, { updateFields: false })).toBe(base);
   });

@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { api, type DepStatus } from './api';
+import { LanguageSelector, useI18n } from './i18n';
 import { ConvertPage } from './pages/ConvertPage';
 import { TemplatesPage } from './pages/TemplatesPage';
 
 type Tab = 'convert' | 'templates';
 
 export function App() {
+  const { t: tr } = useI18n();
   const [tab, setTab] = useState<Tab>('convert');
   const [deps, setDeps] = useState<DepStatus[]>([]);
 
@@ -21,16 +23,17 @@ export function App() {
         <strong className="brand">mdpress</strong>
         <nav>
           <button className={tab === 'convert' ? 'active' : ''} onClick={() => setTab('convert')}>
-            Converti
+            {tr('web.nav.convert')}
           </button>
           <button className={tab === 'templates' ? 'active' : ''} onClick={() => setTab('templates')}>
-            Template
+            {tr('web.nav.templates')}
           </button>
         </nav>
+        <LanguageSelector />
       </header>
       {missing.length > 0 && (
         <div className="banner">
-          Dipendenze mancanti: {missing.map((d) => d.name).join(', ')}. Installa con <code>brew install pandoc typst</code>.
+          {tr('web.deps.missing', { names: missing.map((d) => d.name).join(', ') })} {tr('web.deps.install')} <code>brew install pandoc typst</code>.
         </div>
       )}
       <main>{tab === 'convert' ? <ConvertPage /> : <TemplatesPage />}</main>

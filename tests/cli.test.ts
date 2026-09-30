@@ -4,6 +4,8 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { main } from '../src/cli/program.js';
 import { Catalog } from '../src/core/catalog.js';
+import { writeConfig } from '../src/core/config.js';
+import { t } from '../src/i18n/index.js';
 import { builtinTemplatesDir } from '../src/core/paths.js';
 import { hasTools, tempDir } from './helpers.js';
 
@@ -24,37 +26,37 @@ afterEach(() => {
 async function cli(...args: string[]) {
   const out: string[] = [];
   const err: string[] = [];
-  const code = await main(['node', 'mdpress', ...args], { out: (s) => out.push(s), err: (s) => err.push(s) }, catalog);
+  const code = await main(['node', 'mdpress', ...args], { out: (s) => out.push(s), err: (s) => err.push(s) }, catalog, { LANG: 'C' });
   return { code, out: out.join('\n'), err: err.join('\n') };
 }
 
 describe('mdpress templates', () => {
-  it('list mostra i built-in e segna il default con *', async () => {
+  it('list shows the built-ins and marks the default with *', async () => {
     const r = await cli('templates', 'list');
     expect(r.code).toBe(0);
     expect(r.out).toMatch(/\* mdpstd01\s+standard/);
   });
 
-  it('new, show, default e delete', async () => {
-    expect((await cli('templates', 'new', 'mio', '--name', 'Il mio')).code).toBe(0);
-    expect(JSON.parse((await cli('templates', 'show', 'mio')).out).name).toBe('Il mio');
-    expect((await cli('templates', 'default', 'mio')).code).toBe(0);
-    expect((await cli('templates', 'list')).out).toMatch(/\* [a-z0-9]{8}\s+mio/);
-    const del = await cli('templates', 'delete', 'mio');
+  it('new, show, default and delete', async () => {
+    expect((await cli('templates', 'new', 'mine', '--name', 'My own')).code).toBe(0);
+    expect(JSON.parse((await cli('templates', 'show', 'mine')).out).name).toBe('My own');
+    expect((await cli('templates', 'default', 'mine')).code).toBe(0);
+    expect((await cli('templates', 'list')).out).toMatch(/\* [a-z0-9]{8}\s+mine/);
+    const del = await cli('templates', 'delete', 'mine');
     expect(del.code).toBe(0);
-    expect(del.out).toContain('tornato a standard');
-    expect((await cli('templates', 'show', 'mio')).code).toBe(1);
+    expect(del.out).toContain('back to standard');
+    expect((await cli('templates', 'show', 'mine')).code).toBe(1);
     expect((await cli('templates', 'default')).out).toBe('standard');
     expect(JSON.parse(await readFile(join(home, 'config.json'), 'utf8'))).toEqual({});
   });
 
-  it('new --from duplica', async () => {
-    const r = await cli('templates', 'new', 'copia', '--from', 'standard');
+  it('new --from duplicates', async () => {
+    const r = await cli('templates', 'new', 'copy', '--from', 'standard');
     expect(r.code).toBe(0);
-    expect(JSON.parse((await cli('templates', 'show', 'copia')).out).name).toBe('Standard (copia)');
+    expect(JSON.parse((await cli('templates', 'show', 'copy')).out).name).toBe('Standard (copy)');
   });
 
-  it('export e import', async () => {
+  it('export and import', async () => {
     const zip = join(home, 'std.zip');
     expect((await cli('templates', 'export', 'standard', '-o', zip)).code).toBe(0);
     expect(existsSync(zip)).toBe(true);
@@ -63,7 +65,7 @@ describe('mdpress templates', () => {
     expect(r.out).toContain('standard-2');
   });
 
-  it('delete di un built-in fallisce con messaggio', async () => {
+  it('deleting a built-in fails with a message', async () => {
     const r = await cli('templates', 'delete', 'standard');
     expect(r.code).toBe(1);
     expect(r.err).toContain('built-in');
@@ -71,17 +73,17 @@ describe('mdpress templates', () => {
 });
 
 describe('mdpress render', () => {
-  it('errori d’uso: template sconosciuto, formato e file', async () => {
+  it('usage errors: unknown template, format and file', async () => {
     await writeFile(join(home, 'd.md'), '# x\n');
-    expect((await cli('render', join(home, 'd.md'), '-t', 'boh')).err).toContain('non trovato');
-    expect((await cli('render', join(home, 'd.md'), '-f', 'odt')).err).toContain('Formato non supportato');
-    const missing = await cli('render', join(home, 'nessuno.md'));
+    expect((await cli('render', join(home, 'd.md'), '-t', 'unknown-template')).err).toContain('not found');
+    expect((await cli('render', join(home, 'd.md'), '-f', 'odt')).err).toContain('Unsupported format');
+    const missing = await cli('render', join(home, 'missing.md'));
     expect(missing.code).toBe(1);
-    expect(missing.err).toContain('File non trovato');
+    expect(missing.err).toContain('File not found');
   });
 
-  it.runIf(hasTools)('produce PDF e DOCX', async () => {
-    await writeFile(join(home, 'doc.md'), '---\ntitle: Prova\n---\n\n# Ciao\n');
+  it.runIf(hasTools)('produces PDF and DOCX', async () => {
+    await writeFile(join(home, 'doc.md'), '---\ntitle: Sample\n---\n\n# Hello\n');
     const r = await cli('render', join(home, 'doc.md'), '-f', 'pdf,docx', '--toc');
     expect(r.code).toBe(0);
     expect(r.out).toContain(join(home, 'doc.pdf'));
@@ -89,18 +91,98 @@ describe('mdpress render', () => {
   });
 });
 
-describe('mdpress generale', () => {
-  it('--version stampa la versione', async () => {
+describe('mdpress general', () => {
+  it('--version prints the version', async () => {
     const r = await cli('--version');
     expect(r.code).toBe(0);
     expect(r.out).toMatch(/^\d+\.\d+\.\d+$/);
   });
-  it('comando sconosciuto → codice 1', async () => {
-    expect((await cli('boh')).code).toBe(1);
+  it('unknown command → code 1', async () => {
+    expect((await cli('unknown-template')).code).toBe(1);
   });
-  it.runIf(hasTools)('doctor → codice 0', async () => {
+  it.runIf(hasTools)('doctor → code 0', async () => {
     const r = await cli('doctor');
     expect(r.code).toBe(0);
     expect(r.out).toMatch(/✓ pandoc/);
+  });
+});
+
+describe('language', () => {
+  const run = async (args: string[], env: Record<string, string>) => {
+    const out: string[] = [];
+    const err: string[] = [];
+    const code = await main(['node', 'mdpress', ...args], { out: (s) => out.push(s), err: (s) => err.push(s) }, catalog, env);
+    return { code, out: out.join('\n'), err: err.join('\n') };
+  };
+
+  it('is English by default', async () => {
+    const r = await run(['templates', 'show', 'nope'], { LANG: 'C' });
+    expect(r.err).toContain(t('errors.templateNotFound', { ref: 'nope' }, 'en'));
+  });
+
+  it('an old default slug that no longer exists gives a clear error', async () => {
+    await writeConfig({ defaultTemplate: 'letter' + 'a' });
+    await writeFile(join(home, 'd.md'), '# x\n');
+    const r = await cli('render', join(home, 'd.md'));
+    expect(r.code).toBe(1);
+    expect(r.err).toContain(t('errors.templateNotFound', { ref: 'letter' + 'a' }, 'en'));
+  });
+
+  it('--lang it switches to Italian, before or after the subcommand', async () => {
+    const expected = t('errors.templateNotFound', { ref: 'nope' }, 'it');
+    expect((await run(['--lang', 'it', 'templates', 'show', 'nope'], { LANG: 'C' })).err).toContain(expected);
+    expect((await run(['templates', 'show', 'nope', '--lang=it'], { LANG: 'C' })).err).toContain(expected);
+  });
+
+  it('reads the language from config.json and from LANG', async () => {
+    await writeConfig({ language: 'it' });
+    expect((await run(['templates', 'show', 'nope'], { LANG: 'C' })).err).toContain(t('errors.templateNotFound', { ref: 'nope' }, 'it'));
+    await writeConfig({});
+    expect((await run(['templates', 'show', 'nope'], { LANG: 'it_IT.UTF-8' })).err).toContain(t('errors.templateNotFound', { ref: 'nope' }, 'it'));
+  });
+
+  it('rejects an unsupported --lang', async () => {
+    const r = await run(['--lang', 'fr', 'templates', 'list'], { LANG: 'C' });
+    expect(r.code).toBe(1);
+    expect(r.err).toContain(t('errors.unsupportedLanguage', { lang: 'fr', supported: 'en, it' }, 'en'));
+  });
+
+  it('accepts --lang case-insensitively and with a region', async () => {
+    const expected = t('errors.templateNotFound', { ref: 'nope' }, 'it');
+    expect((await run(['--lang', 'IT', 'templates', 'show', 'nope'], { LANG: 'C' })).err).toContain(expected);
+    expect((await run(['--lang=it-IT', 'templates', 'show', 'nope'], { LANG: 'C' })).err).toContain(expected);
+  });
+
+  it('--lang without a value has a dedicated message', async () => {
+    for (const args of [['templates', 'list', '--lang'], ['--lang='], ['--lang', '--help']]) {
+      const r = await run(args, { LANG: 'C' });
+      expect(r.code).toBe(1);
+      expect(r.err).toBe(t('errors.languageMissing', { supported: 'en, it' }, 'en'));
+    }
+  });
+
+  it('localizes commander help and parse errors', async () => {
+    const help = await run(['--lang', 'it', '--help'], { LANG: 'C' });
+    expect(help.code).toBe(0);
+    expect(help.out).toContain(t('cli.options.help', {}, 'it'));
+    expect(help.out).toContain(t('cli.help.usage', {}, 'it'));
+    expect(help.out).toContain(t('cli.help.commands', {}, 'it'));
+    expect(help.out).not.toContain('Usage:');
+    const render = await run(['--lang', 'it', 'render', '--help'], { LANG: 'C' });
+    expect(render.out).toContain(`(${t('cli.help.default', {}, 'it')}: "pdf")`);
+    const missing = await run(['--lang', 'it', 'render'], { LANG: 'C' });
+    expect(missing.code).toBe(1);
+    expect(missing.err).toBe(t('cli.parse.missingArgument', { token: 'file' }, 'it'));
+    const bogus = await run(['--lang', 'it', '--bogus'], { LANG: 'C' });
+    expect(bogus.code).toBe(1);
+    expect(bogus.err).toBe(t('cli.parse.unknownOption', { token: '--bogus' }, 'it'));
+    const cmd = await run(['--lang', 'it', 'nope'], { LANG: 'C' });
+    expect(cmd.err).toBe(t('cli.parse.unknownCommand', { token: 'nope' }, 'it'));
+    expect((await run(['--lang', 'it', '--version'], { LANG: 'C' })).code).toBe(0);
+  });
+
+  it('prints validation issues in the chosen language', async () => {
+    const r = await run(['--lang', 'it', 'templates', 'new', 'Bad Slug'], { LANG: 'C' });
+    expect(r.err).toContain(t('validation.slug', {}, 'it'));
   });
 });

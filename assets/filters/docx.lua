@@ -1,5 +1,5 @@
--- mdpress: copertina, campi del blocco titolo e interruzioni di pagina per l'output DOCX.
--- I parametri arrivano da variabili d'ambiente MDPRESS_* impostate da render.ts.
+-- mdpress: cover, title block fields and page breaks for DOCX output.
+-- Parameters come from MDPRESS_* environment variables set by render.ts.
 local function env(name)
   local v = os.getenv(name)
   if v == nil or v == '' then
@@ -20,7 +20,7 @@ local function selected_fields()
   return keep
 end
 
--- La numerazione dei titoli si ferma al livello 3, come nel PDF.
+-- Heading numbering stops at level 3, as in the PDF.
 function Header(h)
   if h.level > 3 and not h.classes:includes('unnumbered') then
     h.classes:insert('unnumbered')

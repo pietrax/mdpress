@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-/** Radice del pacchetto: vale sia per src/core (sviluppo) sia per dist/core (build). */
+/** Package root: valid both for src/core (development) and dist/core (build). */
 export const packageRoot = resolve(here, '..', '..');
 export const builtinTemplatesDir = join(packageRoot, 'templates');
 export const assetsDir = join(packageRoot, 'assets');
