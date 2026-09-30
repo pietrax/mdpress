@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
 import { api, type RenderBody, type TemplateSummary } from '../api';
+import { useI18n } from '../i18n';
 import { saveBlob, useDebouncedEffect, useObjectUrl } from '../util';
 
 type CoverMode = 'auto' | 'on' | 'off';
 
 export function ConvertPage() {
+  const { t: tr } = useI18n();
   const [templates, setTemplates] = useState<TemplateSummary[]>([]);
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [markdown, setMarkdown] = useState('');
-  const [filename, setFilename] = useState('documento.md');
+  const [filename, setFilename] = useState('document.md');
   const [toc, setToc] = useState(false);
   const [cover, setCover] = useState<CoverMode>('auto');
   const [previewUrl, setPreview] = useObjectUrl();
@@ -85,7 +87,7 @@ export function ConvertPage() {
   return (
     <div className="split">
       <section className="panel">
-        <h2>1. Documento</h2>
+        <h2>{tr('web.convert.document')}</h2>
         <div
           className={`dropzone${dragging ? ' dragging' : ''}`}
           onDragOver={(e) => {
@@ -101,9 +103,9 @@ export function ConvertPage() {
           }}
         >
           <p>
-            Trascina qui un file <code>.md</code> oppure{' '}
+            {tr('web.convert.dropHint')}{' '}
             <label className="link">
-              sceglilo
+              {tr('web.convert.choose')}
               <input
                 type="file"
                 accept=".md,.markdown,text/markdown"
@@ -115,11 +117,11 @@ export function ConvertPage() {
               />
             </label>
           </p>
-          <textarea value={markdown} onChange={(e) => setMarkdown(e.target.value)} placeholder="…o incolla qui il Markdown" rows={10} />
-          <p className="hint">Le immagini con percorso relativo non sono disponibili da qui: usa la CLI.</p>
+          <textarea value={markdown} onChange={(e) => setMarkdown(e.target.value)} placeholder={tr('web.convert.pastePlaceholder')} rows={10} />
+          <p className="hint">{tr('web.convert.relativeImagesHint')}</p>
         </div>
 
-        <h2>2. Template</h2>
+        <h2>{tr('web.convert.template')}</h2>
         <div className="thumbs">
           {templates.map((t) => (
             <button key={t.id} className={`thumb${t.id === templateId ? ' selected' : ''}`} onClick={() => setTemplateId(t.id)}>
@@ -129,25 +131,25 @@ export function ConvertPage() {
           ))}
         </div>
 
-        <h2>3. Opzioni</h2>
+        <h2>{tr('web.convert.options')}</h2>
         <label className="check">
-          <input type="checkbox" checked={toc} onChange={(e) => setToc(e.target.checked)} /> Includi indice
+          <input type="checkbox" checked={toc} onChange={(e) => setToc(e.target.checked)} /> {tr('web.convert.includeToc')}
         </label>
         <label className="field">
-          <span className="label">Copertina</span>
+          <span className="label">{tr('web.convert.cover')}</span>
           <select value={cover} onChange={(e) => setCover(e.target.value as CoverMode)}>
-            <option value="auto">Come da template</option>
-            <option value="on">Sì</option>
-            <option value="off">No</option>
+            <option value="auto">{tr('web.convert.coverAuto')}</option>
+            <option value="on">{tr('web.convert.coverOn')}</option>
+            <option value="off">{tr('web.convert.coverOff')}</option>
           </select>
         </label>
 
         <div className="actions">
           <button className="primary" disabled={!markdown.trim()} onClick={() => void download('pdf')}>
-            Scarica PDF
+            {tr('web.convert.downloadPdf')}
           </button>
           <button className="primary" disabled={!markdown.trim()} onClick={() => void download('docx')}>
-            Scarica DOCX
+            {tr('web.convert.downloadDocx')}
           </button>
         </div>
         {error && <p className="error">{error}</p>}
@@ -159,8 +161,8 @@ export function ConvertPage() {
       </section>
 
       <section className="preview">
-        {busy && <div className="busy">Aggiorno l’anteprima…</div>}
-        {previewUrl ? <iframe title="Anteprima PDF" src={previewUrl} /> : <p className="empty">L’anteprima del PDF comparirà qui.</p>}
+        {busy && <div className="busy">{tr('web.convert.updatingPreview')}</div>}
+        {previewUrl ? <iframe title={tr('web.convert.previewTitle')} src={previewUrl} /> : <p className="empty">{tr('web.convert.previewEmpty')}</p>}
       </section>
     </div>
   );

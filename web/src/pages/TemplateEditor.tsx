@@ -1,31 +1,14 @@
 import { useEffect, useState } from 'react';
 import { ApiError, api, type Issue, type Template, type TemplateSummary } from '../api';
+import { LANGUAGES, type Language } from '../../../src/i18n/index.js';
 import { BandEditor, ColorInput, Field, NumberInput, Toggle } from '../components/fields';
+import { useI18n } from '../i18n';
 import { useDebouncedEffect, useObjectUrl } from '../util';
 
-const COVER_FIELDS = [
-  ['title', 'Titolo'],
-  ['subtitle', 'Sottotitolo'],
-  ['author', 'Autore'],
-  ['date', 'Data'],
-] as const;
-const MARGINS = [
-  ['top', 'superiore'],
-  ['bottom', 'inferiore'],
-  ['left', 'sinistro'],
-  ['right', 'destro'],
-] as const;
-const COLORS = [
-  ['text', 'Testo'],
-  ['heading', 'Titoli'],
-  ['accent', 'Accento'],
-  ['muted', 'Secondario'],
-] as const;
-const FONTS = [
-  ['body', 'Font del testo'],
-  ['heading', 'Font dei titoli'],
-  ['mono', 'Font del codice'],
-] as const;
+const COVER_FIELDS = ['title', 'subtitle', 'author', 'date'] as const;
+const MARGINS = ['top', 'bottom', 'left', 'right'] as const;
+const COLORS = ['text', 'heading', 'accent', 'muted'] as const;
+const FONTS = ['body', 'heading', 'mono'] as const;
 
 function strip(s: TemplateSummary): Template {
   const { builtin: _builtin, hasLogo: _hasLogo, ...template } = s;
@@ -43,6 +26,7 @@ interface Props {
 }
 
 export function TemplateEditor({ initial, onClose, onDuplicate }: Props) {
+  const { t: tr } = useI18n();
   const readOnly = initial.builtin;
   const [draft, setDraft] = useState<Template>(() => strip(initial));
   const [saved, setSaved] = useState<Template>(() => strip(initial));
@@ -100,12 +84,12 @@ export function TemplateEditor({ initial, onClose, onDuplicate }: Props) {
     const sent = draft;
     try {
       const res = await api.updateTemplate(sent.id, sent);
-      const t = strip(res);
-      setDraft((cur) => (JSON.stringify(cur) === JSON.stringify(sent) ? t : cur));
-      setSaved(t);
+      const stored = strip(res);
+      setDraft((cur) => (JSON.stringify(cur) === JSON.stringify(sent) ? stored : cur));
+      setSaved(stored);
       setHasLogo(res.hasLogo);
       setSaveIssues({});
-      setMessage('Template salvato');
+      setMessage(tr('web.editor.saved'));
     } catch (e) {
       if (e instanceof ApiError && e.issues.length > 0) setSaveIssues(toMap(e.issues));
       setMessage((e as Error).message);
@@ -114,7 +98,7 @@ export function TemplateEditor({ initial, onClose, onDuplicate }: Props) {
 
   async function uploadLogo(file: File) {
     if (!/^image\/(png|jpeg)$/.test(file.type)) {
-      setMessage('Il logo deve essere PNG o JPG');
+      setMessage(tr('web.errors.logoType'));
       return;
     }
     try {
@@ -131,28 +115,28 @@ export function TemplateEditor({ initial, onClose, onDuplicate }: Props) {
   }
 
   function close() {
-    if (dirty && !window.confirm('Ci sono modifiche non salvate. Uscire comunque?')) return;
+    if (dirty && !window.confirm(tr('web.errors.unsavedChanges'))) return;
     onClose();
   }
 
-  const t = draft;
-  const logoAvailable = hasLogo && t.logo.file !== null;
+  const tpl = draft;
+  const logoAvailable = hasLogo && tpl.logo.file !== null;
 
   return (
     <div className="editor">
       <div className="editor-bar">
-        <button onClick={close}>← Catalogo</button>
-        <h2>{t.name}</h2>
+        <button onClick={close}>{tr('web.editor.back')}</button>
+        <h2>{tpl.name}</h2>
         {readOnly ? (
           <>
-            <span className="badge">built-in, sola lettura</span>
+            <span className="badge">{tr('web.editor.readonlyBadge')}</span>
             <button className="primary" onClick={onDuplicate}>
-              Duplica per modificare
+              {tr('web.editor.duplicateToEdit')}
             </button>
           </>
         ) : (
           <button className="primary" disabled={!dirty} onClick={() => void save()}>
-            Salva
+            {tr('web.editor.save')}
           </button>
         )}
       </div>
@@ -170,71 +154,78 @@ export function TemplateEditor({ initial, onClose, onDuplicate }: Props) {
             ))}
           </datalist>
 
-          <h3>Generale</h3>
-          <Field label="Nome" error={err('name')}>
-            <input value={t.name} onChange={(e) => update((d) => { d.name = e.target.value; })} />
+          <h3>{tr('web.editor.general')}</h3>
+          <Field label={tr('web.editor.name')} error={err('name')}>
+            <input value={tpl.name} onChange={(e) => update((d) => { d.name = e.target.value; })} />
           </Field>
-          <Field label="Slug" error={err('slug')} hint={`Da CLI: mdpress render doc.md -t ${t.slug}`}>
-            <input value={t.slug} onChange={(e) => update((d) => { d.slug = e.target.value; })} />
+          <Field label={tr('web.editor.slug')} error={err('slug')} hint={tr('web.editor.slugHint', { slug: tpl.slug })}>
+            <input value={tpl.slug} onChange={(e) => update((d) => { d.slug = e.target.value; })} />
           </Field>
-          <Field label="Descrizione" error={err('description')}>
-            <input value={t.description} onChange={(e) => update((d) => { d.description = e.target.value; })} />
+          <Field label={tr('web.editor.description')} error={err('description')}>
+            <input value={tpl.description} onChange={(e) => update((d) => { d.description = e.target.value; })} />
+          </Field>
+          <Field label={tr('web.editor.documentLanguage')} error={err('language')}>
+            <select value={tpl.language} onChange={(e) => update((d) => { d.language = e.target.value as Language; })}>
+              {LANGUAGES.map((l) => (
+                <option key={l} value={l}>{tr(`web.language.names.${l}`)}</option>
+              ))}
+            </select>
           </Field>
 
-          <h3>Pagina</h3>
+          <h3>{tr('web.editor.page')}</h3>
           <div className="row">
-            <Field label="Formato">
-              <select value={t.page.size} onChange={(e) => update((d) => { d.page.size = e.target.value as Template['page']['size']; })}>
+            <Field label={tr('web.editor.size')}>
+              <select value={tpl.page.size} onChange={(e) => update((d) => { d.page.size = e.target.value as Template['page']['size']; })}>
                 <option value="A4">A4</option>
                 <option value="A5">A5</option>
                 <option value="Letter">Letter</option>
               </select>
             </Field>
-            <Field label="Orientamento">
+            <Field label={tr('web.editor.orientation')}>
               <select
-                value={t.page.orientation}
+                value={tpl.page.orientation}
                 onChange={(e) => update((d) => { d.page.orientation = e.target.value as Template['page']['orientation']; })}
               >
-                <option value="portrait">Verticale</option>
-                <option value="landscape">Orizzontale</option>
+                <option value="portrait">{tr('web.editor.portrait')}</option>
+                <option value="landscape">{tr('web.editor.landscape')}</option>
               </select>
             </Field>
           </div>
           <div className="row">
-            {MARGINS.map(([side, label]) => (
-              <Field key={side} label={`Margine ${label} (mm)`} error={err(`page.margins.${side}`)}>
-                <NumberInput value={t.page.margins[side]} min={0} max={80} onChange={(v) => update((d) => { d.page.margins[side] = v; })} />
+            {MARGINS.map((side) => (
+              <Field key={side} label={tr('web.editor.margin', { side: tr(`web.editor.sides.${side}`) })} error={err(`page.margins.${side}`)}>
+                <NumberInput value={tpl.page.margins[side]} min={0} max={80} onChange={(v) => update((d) => { d.page.margins[side] = v; })} />
               </Field>
             ))}
           </div>
 
-          <h3>Colori</h3>
+          <h3>{tr('web.editor.colors')}</h3>
           <div className="row">
-            {COLORS.map(([key, label]) => (
-              <Field key={key} label={label} error={err(`colors.${key}`)}>
-                <ColorInput value={t.colors[key]} onChange={(v) => update((d) => { d.colors[key] = v; })} />
+            {COLORS.map((key) => (
+              <Field key={key} label={tr(`web.editor.colorNames.${key}`)} error={err(`colors.${key}`)}>
+                <ColorInput value={tpl.colors[key]} onChange={(v) => update((d) => { d.colors[key] = v; })} />
               </Field>
             ))}
           </div>
 
-          <h3>Font</h3>
+          <h3>{tr('web.editor.fonts')}</h3>
           <div className="row">
-            {FONTS.map(([key, label]) => (
-              <Field key={key} label={label} error={err(`fonts.${key}`)}>
-                <input list="mdpress-fonts" value={t.fonts[key]} onChange={(e) => update((d) => { d.fonts[key] = e.target.value; })} />
+            {FONTS.map((key) => (
+              <Field key={key} label={tr(`web.editor.fontNames.${key}`)} error={err(`fonts.${key}`)}>
+                <input list="mdpress-fonts" value={tpl.fonts[key]} onChange={(e) => update((d) => { d.fonts[key] = e.target.value; })} />
               </Field>
             ))}
-            <Field label="Corpo (pt)" error={err('fonts.size')}>
-              <NumberInput value={t.fonts.size} min={8} max={16} step={0.5} onChange={(v) => update((d) => { d.fonts.size = v; })} />
+            <Field label={tr('web.editor.fontSize')} error={err('fonts.size')}>
+              <NumberInput value={tpl.fonts.size} min={8} max={16} step={0.5} onChange={(v) => update((d) => { d.fonts.size = v; })} />
             </Field>
           </div>
-          <Toggle label="Titoli numerati (1, 1.1, 1.1.1)" checked={t.headings.numbered} onChange={(v) => update((d) => { d.headings.numbered = v; })} />
+          <Toggle label={tr('web.editor.numberedHeadings')} checked={tpl.headings.numbered} onChange={(v) => update((d) => { d.headings.numbered = v; })} />
 
-          <h3>Logo</h3>
+          <h3>{tr('web.editor.logo')}</h3>
           <div className="logo-box">
-            {logoAvailable ? <img src={api.logoUrl(t.id, logoVersion)} alt="Logo" /> : <span className="hint">Nessun logo</span>}
+            {logoAvailable ? <img src={api.logoUrl(tpl.id, logoVersion)} alt={tr('web.editor.logo')} /> : <span className="hint">{tr('web.editor.noLogo')}</span>}
             <label className="button">
-              Carica PNG/JPG
+              {tr('web.editor.uploadLogo')}
               <input
                 type="file"
                 accept="image/png,image/jpeg"
@@ -246,7 +237,7 @@ export function TemplateEditor({ initial, onClose, onDuplicate }: Props) {
                 }}
               />
             </label>
-            {t.logo.file && <button
+            {tpl.logo.file && <button
               onClick={() =>
                 update((d) => {
                   d.logo.file = null;
@@ -255,48 +246,48 @@ export function TemplateEditor({ initial, onClose, onDuplicate }: Props) {
                       if (band[pos].type === 'logo') band[pos] = { type: 'empty' };
                 })
               }
-            >Rimuovi</button>}
+            >{tr('web.editor.removeLogo')}</button>}
           </div>
-          <Field label="Altezza del logo in testata (mm)" error={err('logo.height')} hint="In copertina il logo è alto il doppio">
-            <NumberInput value={t.logo.height} min={4} max={60} onChange={(v) => update((d) => { d.logo.height = v; })} />
+          <Field label={tr('web.editor.logoHeight')} error={err('logo.height')} hint={tr('web.editor.logoHeightHint')}>
+            <NumberInput value={tpl.logo.height} min={4} max={60} onChange={(v) => update((d) => { d.logo.height = v; })} />
           </Field>
 
-          <h3>Testata</h3>
-          <BandEditor value={t.header} hasLogo={logoAvailable} issues={issues} prefix="header" onChange={(v) => update((d) => { d.header = v; })} />
-          <h3>Piè di pagina</h3>
-          <BandEditor value={t.footer} hasLogo={logoAvailable} issues={issues} prefix="footer" onChange={(v) => update((d) => { d.footer = v; })} />
-          <p className="hint">Segnaposto disponibili: {'{title} {subtitle} {author} {date} {page} {pages}'}</p>
+          <h3>{tr('web.editor.header')}</h3>
+          <BandEditor value={tpl.header} hasLogo={logoAvailable} issues={issues} prefix="header" onChange={(v) => update((d) => { d.header = v; })} />
+          <h3>{tr('web.editor.footer')}</h3>
+          <BandEditor value={tpl.footer} hasLogo={logoAvailable} issues={issues} prefix="footer" onChange={(v) => update((d) => { d.footer = v; })} />
+          <p className="hint">{tr('web.editor.placeholders', { list: '{title} {subtitle} {author} {date} {page} {pages}' })}</p>
 
-          <h3>Copertina</h3>
-          <Toggle label="Copertina attiva di default" checked={t.cover.enabled} onChange={(v) => update((d) => { d.cover.enabled = v; })} />
-          <Toggle label="Logo in copertina" checked={t.cover.showLogo} onChange={(v) => update((d) => { d.cover.showLogo = v; })} />
+          <h3>{tr('web.editor.cover')}</h3>
+          <Toggle label={tr('web.editor.coverEnabled')} checked={tpl.cover.enabled} onChange={(v) => update((d) => { d.cover.enabled = v; })} />
+          <Toggle label={tr('web.editor.coverLogo')} checked={tpl.cover.showLogo} onChange={(v) => update((d) => { d.cover.showLogo = v; })} />
           <div className="row">
-            {COVER_FIELDS.map(([key, label]) => (
+            {COVER_FIELDS.map((key) => (
               <Toggle
                 key={key}
-                label={label}
-                checked={t.cover.fields.includes(key)}
+                label={tr(`web.editor.coverFields.${key}`)}
+                checked={tpl.cover.fields.includes(key)}
                 onChange={(on) =>
                   update((d) => {
-                    d.cover.fields = COVER_FIELDS.map(([f]) => f).filter((f) => (f === key ? on : d.cover.fields.includes(f)));
+                    d.cover.fields = COVER_FIELDS.filter((f) => (f === key ? on : d.cover.fields.includes(f)));
                   })
                 }
               />
             ))}
           </div>
 
-          <h3>Blocchi</h3>
-          <Toggle label="Tabelle a righe alternate" checked={t.blocks.tableStriped} onChange={(v) => update((d) => { d.blocks.tableStriped = v; })} />
-          <Toggle label="Barra colorata sulle citazioni" checked={t.blocks.quoteBar} onChange={(v) => update((d) => { d.blocks.quoteBar = v; })} />
-          <Field label="Sfondo dei blocchi di codice" error={err('blocks.codeBackground')}>
-            <ColorInput value={t.blocks.codeBackground} onChange={(v) => update((d) => { d.blocks.codeBackground = v; })} />
+          <h3>{tr('web.editor.blocks')}</h3>
+          <Toggle label={tr('web.editor.stripedTables')} checked={tpl.blocks.tableStriped} onChange={(v) => update((d) => { d.blocks.tableStriped = v; })} />
+          <Toggle label={tr('web.editor.quoteBar')} checked={tpl.blocks.quoteBar} onChange={(v) => update((d) => { d.blocks.quoteBar = v; })} />
+          <Field label={tr('web.editor.codeBackground')} error={err('blocks.codeBackground')}>
+            <ColorInput value={tpl.blocks.codeBackground} onChange={(v) => update((d) => { d.blocks.codeBackground = v; })} />
           </Field>
         </fieldset>
 
         <section className="preview">
-          {previewUrl ? <iframe title="Anteprima" src={previewUrl} /> : <p className="empty">Genero l’anteprima…</p>}
+          {previewUrl ? <iframe title={tr('web.editor.previewTitle')} src={previewUrl} /> : <p className="empty">{tr('web.editor.generatingPreview')}</p>}
           <p className="hint" style={{ padding: '0 12px' }}>
-            Anteprima del PDF. Il DOCX usa gli stessi colori e font come stili di Word.
+            {tr('web.editor.previewHint')}
           </p>
         </section>
       </div>

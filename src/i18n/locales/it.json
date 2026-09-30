@@ -109,5 +109,140 @@
       "notFound": "{mark} {name} non trovato (richiesta ≥ {min})",
       "install": "Installa le dipendenze con: brew install pandoc typst"
     }
+  },
+  "web": {
+    "nav": {
+      "convert": "Converti",
+      "templates": "Template"
+    },
+    "language": {
+      "label": "Lingua",
+      "names": {
+        "en": "Inglese",
+        "it": "Italiano"
+      }
+    },
+    "deps": {
+      "missing": "Dipendenze mancanti: {names}.",
+      "install": "Installa con"
+    },
+    "errors": {
+      "http": "Errore {status}",
+      "network": "Impossibile raggiungere il server",
+      "logoType": "Il logo deve essere PNG o JPG",
+      "unsavedChanges": "Ci sono modifiche non salvate. Uscire comunque?"
+    },
+    "convert": {
+      "document": "1. Documento",
+      "dropHint": "Trascina qui un file .md oppure",
+      "choose": "sceglilo",
+      "pastePlaceholder": "…o incolla qui il Markdown",
+      "relativeImagesHint": "Le immagini con percorso relativo non sono disponibili da qui: usa la CLI.",
+      "template": "2. Template",
+      "options": "3. Opzioni",
+      "includeToc": "Includi indice",
+      "cover": "Copertina",
+      "coverAuto": "Come da template",
+      "coverOn": "Sì",
+      "coverOff": "No",
+      "downloadPdf": "Scarica PDF",
+      "downloadDocx": "Scarica DOCX",
+      "updatingPreview": "Aggiorno l’anteprima…",
+      "previewEmpty": "L’anteprima del PDF comparirà qui.",
+      "previewTitle": "Anteprima PDF"
+    },
+    "catalog": {
+      "newPlaceholder": "Nome del nuovo template",
+      "create": "Crea",
+      "import": "Importa .zip",
+      "builtin": "built-in",
+      "open": "Apri",
+      "edit": "Modifica",
+      "duplicate": "Duplica",
+      "export": "Esporta",
+      "delete": "Elimina",
+      "copyPrompt": "Nome della copia",
+      "copyDefaultName": "{name} (copia)",
+      "deleteConfirm": "Eliminare il template \"{name}\"?",
+      "empty": "Nessun template."
+    },
+    "editor": {
+      "back": "← Catalogo",
+      "readonlyBadge": "built-in, sola lettura",
+      "duplicateToEdit": "Duplica per modificare",
+      "save": "Salva",
+      "saved": "Template salvato",
+      "general": "Generale",
+      "name": "Nome",
+      "slug": "Slug",
+      "slugHint": "Da CLI: mdpress render doc.md -t {slug}",
+      "description": "Descrizione",
+      "documentLanguage": "Lingua del documento",
+      "page": "Pagina",
+      "size": "Formato",
+      "orientation": "Orientamento",
+      "portrait": "Verticale",
+      "landscape": "Orizzontale",
+      "margin": "Margine {side} (mm)",
+      "sides": {
+        "top": "superiore",
+        "bottom": "inferiore",
+        "left": "sinistro",
+        "right": "destro"
+      },
+      "colors": "Colori",
+      "colorNames": {
+        "text": "Testo",
+        "heading": "Titoli",
+        "accent": "Accento",
+        "muted": "Secondario"
+      },
+      "fonts": "Font",
+      "fontNames": {
+        "body": "Font del testo",
+        "heading": "Font dei titoli",
+        "mono": "Font del codice"
+      },
+      "fontSize": "Corpo (pt)",
+      "numberedHeadings": "Titoli numerati (1, 1.1, 1.1.1)",
+      "logo": "Logo",
+      "noLogo": "Nessun logo",
+      "uploadLogo": "Carica PNG/JPG",
+      "removeLogo": "Rimuovi",
+      "logoHeight": "Altezza del logo in testata (mm)",
+      "logoHeightHint": "In copertina il logo è alto il doppio",
+      "header": "Testata",
+      "footer": "Piè di pagina",
+      "placeholders": "Segnaposto disponibili: {list}",
+      "cover": "Copertina",
+      "coverEnabled": "Copertina attiva di default",
+      "coverLogo": "Logo in copertina",
+      "coverFields": {
+        "title": "Titolo",
+        "subtitle": "Sottotitolo",
+        "author": "Autore",
+        "date": "Data"
+      },
+      "blocks": "Blocchi",
+      "stripedTables": "Tabelle a righe alternate",
+      "quoteBar": "Barra colorata sulle citazioni",
+      "codeBackground": "Sfondo dei blocchi di codice",
+      "previewTitle": "Anteprima",
+      "previewHint": "Anteprima del PDF. Il DOCX usa gli stessi colori e font come stili di Word.",
+      "generatingPreview": "Genero l’anteprima…"
+    },
+    "fields": {
+      "slotEmpty": "Vuoto",
+      "slotText": "Testo",
+      "slotLogo": "Logo",
+      "slotPlaceholder": "es. {title} · {page}/{pages}",
+      "positions": {
+        "left": "Sinistra",
+        "center": "Centro",
+        "right": "Destra"
+      },
+      "rule": "Filetto",
+      "skipFirstPage": "Nascondi sulla prima pagina"
+    }
   }
 }

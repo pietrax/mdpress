@@ -109,5 +109,140 @@
       "notFound": "{mark} {name} not found (requires ≥ {min})",
       "install": "Install the dependencies with: brew install pandoc typst"
     }
+  },
+  "web": {
+    "nav": {
+      "convert": "Convert",
+      "templates": "Templates"
+    },
+    "language": {
+      "label": "Language",
+      "names": {
+        "en": "English",
+        "it": "Italian"
+      }
+    },
+    "deps": {
+      "missing": "Missing dependencies: {names}.",
+      "install": "Install with"
+    },
+    "errors": {
+      "http": "Error {status}",
+      "network": "Cannot reach the server",
+      "logoType": "The logo must be a PNG or JPG",
+      "unsavedChanges": "You have unsaved changes. Leave anyway?"
+    },
+    "convert": {
+      "document": "1. Document",
+      "dropHint": "Drop a .md file here or",
+      "choose": "choose one",
+      "pastePlaceholder": "…or paste the Markdown here",
+      "relativeImagesHint": "Images with relative paths are not available here: use the CLI.",
+      "template": "2. Template",
+      "options": "3. Options",
+      "includeToc": "Include table of contents",
+      "cover": "Cover",
+      "coverAuto": "As per template",
+      "coverOn": "Yes",
+      "coverOff": "No",
+      "downloadPdf": "Download PDF",
+      "downloadDocx": "Download DOCX",
+      "updatingPreview": "Updating preview…",
+      "previewEmpty": "The PDF preview will appear here.",
+      "previewTitle": "PDF preview"
+    },
+    "catalog": {
+      "newPlaceholder": "Name of the new template",
+      "create": "Create",
+      "import": "Import .zip",
+      "builtin": "built-in",
+      "open": "Open",
+      "edit": "Edit",
+      "duplicate": "Duplicate",
+      "export": "Export",
+      "delete": "Delete",
+      "copyPrompt": "Name of the copy",
+      "copyDefaultName": "{name} (copy)",
+      "deleteConfirm": "Delete the template \"{name}\"?",
+      "empty": "No templates yet."
+    },
+    "editor": {
+      "back": "← Catalogue",
+      "readonlyBadge": "built-in, read-only",
+      "duplicateToEdit": "Duplicate to edit",
+      "save": "Save",
+      "saved": "Template saved",
+      "general": "General",
+      "name": "Name",
+      "slug": "Slug",
+      "slugHint": "From the CLI: mdpress render doc.md -t {slug}",
+      "description": "Description",
+      "documentLanguage": "Document language",
+      "page": "Page",
+      "size": "Size",
+      "orientation": "Orientation",
+      "portrait": "Portrait",
+      "landscape": "Landscape",
+      "margin": "{side} margin (mm)",
+      "sides": {
+        "top": "Top",
+        "bottom": "Bottom",
+        "left": "Left",
+        "right": "Right"
+      },
+      "colors": "Colors",
+      "colorNames": {
+        "text": "Text",
+        "heading": "Headings",
+        "accent": "Accent",
+        "muted": "Muted"
+      },
+      "fonts": "Fonts",
+      "fontNames": {
+        "body": "Body font",
+        "heading": "Heading font",
+        "mono": "Code font"
+      },
+      "fontSize": "Body size (pt)",
+      "numberedHeadings": "Numbered headings (1, 1.1, 1.1.1)",
+      "logo": "Logo",
+      "noLogo": "No logo",
+      "uploadLogo": "Upload PNG/JPG",
+      "removeLogo": "Remove",
+      "logoHeight": "Logo height in the header (mm)",
+      "logoHeightHint": "On the cover the logo is twice as tall",
+      "header": "Header",
+      "footer": "Footer",
+      "placeholders": "Available placeholders: {list}",
+      "cover": "Cover",
+      "coverEnabled": "Cover enabled by default",
+      "coverLogo": "Logo on the cover",
+      "coverFields": {
+        "title": "Title",
+        "subtitle": "Subtitle",
+        "author": "Author",
+        "date": "Date"
+      },
+      "blocks": "Blocks",
+      "stripedTables": "Striped table rows",
+      "quoteBar": "Colored bar on quotes",
+      "codeBackground": "Code block background",
+      "previewTitle": "Preview",
+      "previewHint": "PDF preview. The DOCX uses the same colors and fonts as Word styles.",
+      "generatingPreview": "Generating preview…"
+    },
+    "fields": {
+      "slotEmpty": "Empty",
+      "slotText": "Text",
+      "slotLogo": "Logo",
+      "slotPlaceholder": "e.g. {title} · {page}/{pages}",
+      "positions": {
+        "left": "Left",
+        "center": "Center",
+        "right": "Right"
+      },
+      "rule": "Rule",
+      "skipFirstPage": "Hide on the first page"
+    }
   }
 }

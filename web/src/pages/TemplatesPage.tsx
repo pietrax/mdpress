@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { slugify, uniqueSlug } from '../../../src/core/slug.js';
 import { api, type TemplateSummary } from '../api';
+import { useI18n } from '../i18n';
 import { TemplateEditor } from './TemplateEditor';
 
 export function TemplatesPage() {
+  const { t: tr } = useI18n();
   const [templates, setTemplates] = useState<TemplateSummary[]>([]);
   const [editing, setEditing] = useState<TemplateSummary | null>(null);
   const [newName, setNewName] = useState('');
@@ -47,7 +49,7 @@ export function TemplatesPage() {
 
   const duplicate = (t: TemplateSummary) =>
     act(async () => {
-      const name = window.prompt('Nome della copia', `${t.name} (copia)`);
+      const name = window.prompt(tr('web.catalog.copyPrompt'), tr('web.catalog.copyDefaultName', { name: t.name }));
       if (!name) return;
       const copy = await api.duplicateTemplate(t.id, uniqueSlug(slugify(name), taken), name);
       await reload();
@@ -56,7 +58,7 @@ export function TemplatesPage() {
 
   const remove = (t: TemplateSummary) =>
     act(async () => {
-      if (!window.confirm(`Eliminare il template "${t.name}"?`)) return;
+      if (!window.confirm(tr('web.catalog.deleteConfirm', { name: t.name }))) return;
       await api.deleteTemplate(t.id);
       await reload();
     });
@@ -99,12 +101,12 @@ export function TemplatesPage() {
             void create();
           }}
         >
-          <input placeholder="Nome del nuovo template" value={newName} onChange={(e) => setNewName(e.target.value)} />
+          <input placeholder={tr('web.catalog.newPlaceholder')} value={newName} onChange={(e) => setNewName(e.target.value)} />
           <button className="primary" type="submit" disabled={!newName.trim()}>
-            Crea
+            {tr('web.catalog.create')}
           </button>
         </form>
-        <button onClick={() => importRef.current?.click()}>Importa .zip</button>
+        <button onClick={() => importRef.current?.click()}>{tr('web.catalog.import')}</button>
         <input
           ref={importRef}
           type="file"
@@ -124,21 +126,21 @@ export function TemplatesPage() {
             <img src={api.thumbnailUrl(t.id, version)} alt="" loading="lazy" onClick={() => setEditing(t)} />
             <div className="card-body">
               <h3>
-                {t.name} {t.builtin && <span className="badge">built-in</span>}
+                {t.name} {t.builtin && <span className="badge">{tr('web.catalog.builtin')}</span>}
               </h3>
               <p className="hint">
                 {t.slug} · {t.id}
               </p>
               {t.description && <p>{t.description}</p>}
               <div className="actions">
-                <button onClick={() => setEditing(t)}>{t.builtin ? 'Apri' : 'Modifica'}</button>
-                <button onClick={() => void duplicate(t)}>Duplica</button>
+                <button onClick={() => setEditing(t)}>{t.builtin ? tr('web.catalog.open') : tr('web.catalog.edit')}</button>
+                <button onClick={() => void duplicate(t)}>{tr('web.catalog.duplicate')}</button>
                 <a className="button" href={api.exportUrl(t.id)} download>
-                  Esporta
+                  {tr('web.catalog.export')}
                 </a>
                 {!t.builtin && (
                   <button className="danger" onClick={() => void remove(t)}>
-                    Elimina
+                    {tr('web.catalog.delete')}
                   </button>
                 )}
               </div>
