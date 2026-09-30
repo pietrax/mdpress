@@ -47,6 +47,9 @@ describe('xmlEscape', () => {
   it('escapa i caratteri XML', () => {
     expect(xmlEscape(`a&b<c>"d"`)).toBe('a&amp;b&lt;c&gt;&quot;d&quot;');
   });
+  it('rimuove i caratteri di controllo illegali in XML 1.0', () => {
+    expect(xmlEscape('a\x01b\x0bc')).toBe('abc');
+  });
 });
 
 describe('buildReferenceDocx', () => {
@@ -59,6 +62,13 @@ describe('buildReferenceDocx', () => {
     expect(styles).toMatch(/<w:rPrDefault><w:rPr><w:rFonts w:ascii="Georgia"/);
     expect(styles).toContain('w:styleId="SourceCode"');
     expect(styles).toContain('w:styleId="TOCHeading"');
+  });
+
+  it('un $ nel nome del font non corrompe styles.xml', async () => {
+    const { text } = await build({ fonts: { body: 'A$&B$$C' } });
+    const styles = await text('word/styles.xml');
+    expect(styles).toContain('w:ascii="A$&amp;B$$C"');
+    expect(styles.match(/w:styleId="Heading1"/g)).toHaveLength(1);
   });
 
   it('standard: solo il footer con i campi PAGE e NUMPAGES', async () => {

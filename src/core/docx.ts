@@ -20,7 +20,9 @@ const REL_TYPE = 'http://schemas.openxmlformats.org/officeDocument/2006/relation
 const LOGO_REL_ID = 'rIdMdpressLogo';
 
 export function xmlEscape(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return s
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 const halfPt = (pt: number) => Math.round(pt * 2);
@@ -158,9 +160,9 @@ function replaceStyles(xml: string, defs: StyleDef[], t: Template): string {
   }
   out = out.replace(
     /<w:rPrDefault>[\s\S]*?<\/w:rPrDefault>/,
-    `<w:rPrDefault><w:rPr>${fonts(t.fonts.body)}${size(t.fonts.size)}<w:lang w:val="it-IT" w:eastAsia="en-US" w:bidi="ar-SA"/></w:rPr></w:rPrDefault>`,
+    () => `<w:rPrDefault><w:rPr>${fonts(t.fonts.body)}${size(t.fonts.size)}<w:lang w:val="it-IT" w:eastAsia="en-US" w:bidi="ar-SA"/></w:rPr></w:rPrDefault>`,
   );
-  return out.replace('</w:styles>', `${defs.map(styleXml).join('')}</w:styles>`);
+  return out.replace('</w:styles>', () => `${defs.map(styleXml).join('')}</w:styles>`);
 }
 
 function pageDims(t: Template): { w: number; h: number } {
@@ -285,11 +287,11 @@ export async function buildReferenceDocx(base: Buffer, ctx: DocxContext): Promis
     zip.file(`word/${part.name}.xml`, part.xml);
     rels = rels.replace(
       '</Relationships>',
-      `<Relationship Id="${part.relId}" Type="${REL_TYPE}/${part.kind}" Target="${part.name}.xml"/></Relationships>`,
+      () => `<Relationship Id="${part.relId}" Type="${REL_TYPE}/${part.kind}" Target="${part.name}.xml"/></Relationships>`,
     );
     types = types.replace(
       '</Types>',
-      `<Override PartName="/word/${part.name}.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.${part.kind}+xml"/></Types>`,
+      () => `<Override PartName="/word/${part.name}.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.${part.kind}+xml"/></Types>`,
     );
     if (part.xml.includes(LOGO_REL_ID)) {
       zip.file(`word/_rels/${part.name}.xml.rels`, logoRels);
@@ -299,7 +301,7 @@ export async function buildReferenceDocx(base: Buffer, ctx: DocxContext): Promis
   if (ctx.logo && logoUsed) {
     zip.file(`word/media/mdpress-logo.${ext}`, ctx.logo.data);
     if (!new RegExp(`Extension="${ext}"`, 'i').test(types)) {
-      types = types.replace('</Types>', `<Default Extension="${ext}" ContentType="${ext === 'png' ? 'image/png' : 'image/jpeg'}"/></Types>`);
+      types = types.replace('</Types>', () => `<Default Extension="${ext}" ContentType="${ext === 'png' ? 'image/png' : 'image/jpeg'}"/></Types>`);
     }
   }
   zip.file('word/_rels/document.xml.rels', rels);
@@ -308,7 +310,7 @@ export async function buildReferenceDocx(base: Buffer, ctx: DocxContext): Promis
   const doc = await read('word/document.xml');
   const section = sectPr(ctx, { header: Boolean(header), footer: Boolean(footer) });
   const SECT_RE = /<w:sectPr\b[^>]*>[\s\S]*?<\/w:sectPr>/;
-  zip.file('word/document.xml', SECT_RE.test(doc) ? doc.replace(SECT_RE, section) : doc.replace('</w:body>', `${section}</w:body>`));
+  zip.file('word/document.xml', SECT_RE.test(doc) ? doc.replace(SECT_RE, () => section) : doc.replace('</w:body>', () => `${section}</w:body>`));
 
   return zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
 }
@@ -329,7 +331,7 @@ export async function finalizeDocx(docx: Buffer, opts: { updateFields: boolean }
   const updated =
     match && match.index !== undefined
       ? xml.slice(0, match.index) + tag + xml.slice(match.index)
-      : xml.replace('</w:settings>', `${tag}</w:settings>`);
+      : xml.replace('</w:settings>', () => `${tag}</w:settings>`);
   zip.file('word/settings.xml', updated);
   return zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
 }
