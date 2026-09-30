@@ -136,16 +136,19 @@ translation key from its issue code and parameters:
 
 | zod issue | key | params |
 |---|---|---|
-| `too_big` | `validation.tooBig` | `max` |
-| `too_small` (number) | `validation.tooSmall` | `min` |
-| `too_small` (string, min 1) | `validation.required` | — |
+| `too_big`, origin number | `validation.tooBig` | `max` |
+| `too_big`, origin string | `validation.tooLong` | `max` |
+| `too_small`, origin number | `validation.tooSmall` | `min` |
+| `too_small`, origin string (min 1) | `validation.required` | — |
 | `invalid_type` expecting number | `validation.number` | — |
+| `invalid_type` expecting boolean | `validation.boolean` | — |
 | `invalid_type` (other) | `validation.invalidType` | `expected` |
-| `invalid_format` / regex on colors | `validation.color` | — |
-| regex on `slug` | `validation.slug` | — |
-| regex on `id` | `validation.id` | — |
-| regex on `logo.file` | `validation.logoFile` | — |
-| `invalid_value` (enum/literal) | `validation.oneOf` | `values` |
+| `invalid_format` (regex) on colors | `validation.color` | — |
+| `invalid_format` (regex) on `slug` | `validation.slug` | — |
+| `invalid_format` (regex) on `id` | `validation.id` | — |
+| `invalid_format` (regex) on `logo.file` | `validation.logoFile` | — |
+| `invalid_value` (enum/literal) | `validation.oneOf` | `values` (joined with ", ") |
+| `invalid_union` with a discriminator (slot `type`) | `validation.oneOf` | `values` from `options` |
 | root not an object | `validation.notObject` | — |
 | anything else | `validation.invalid` | — |
 
