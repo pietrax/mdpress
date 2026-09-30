@@ -13,18 +13,18 @@ const ctx = (over: Partial<TypstContext> = {}): TypstContext => ({
   logoPath: null,
   cover: false,
   toc: false,
-  fallbackTitle: 'documento',
+  fallbackTitle: 'document',
   ...over,
 });
 
 describe('typstString', () => {
-  it('escapa virgolette, backslash, a capo e raddoppia $', () => {
+  it('escapes quotes, backslashes, newlines and doubles $', () => {
     expect(typstString('a"b\\c$d\ne')).toBe('"a\\"b\\\\c$$d\\ne"');
   });
 });
 
 describe('textContent', () => {
-  it('traduce i segnaposto in espressioni Typst', () => {
+  it('translates placeholders into Typst expressions', () => {
     expect(textContent('{title} — p. {page}/{pages}')).toBe(
       '[#meta-title#" — p. "#counter(page).display()#"/"#str(counter(page).final().first())]',
     );
@@ -32,7 +32,7 @@ describe('textContent', () => {
 });
 
 describe('buildTypstTemplate', () => {
-  it('standard: A4 verticale, footer con numero di pagina, niente testata né copertina', () => {
+  it('standard: portrait A4, footer with page number, no header or cover', () => {
     const out = buildTypstTemplate(ctx());
     expect(out).toContain('paper: "a4"');
     expect(out).toContain('flipped: false');
@@ -44,64 +44,69 @@ describe('buildTypstTemplate', () => {
     expect(out).not.toContain('#outline');
   });
 
-  it('Letter orizzontale', () => {
+  it('landscape Letter', () => {
     const out = buildTypstTemplate(ctx({ template: tpl({ page: { size: 'Letter', orientation: 'landscape' } }) }));
     expect(out).toContain('paper: "us-letter"');
     expect(out).toContain('flipped: true');
   });
 
-  it('titoli numerati fino al livello 3', () => {
+  it('numbered headings down to level 3', () => {
     expect(buildTypstTemplate(ctx({ template: tpl({ headings: { numbered: true } }) }))).toContain(
       'numbering("1.1.1."',
     );
   });
 
-  it('copertina con logo a doppia altezza', () => {
+  it('cover with a double-height logo', () => {
     const out = buildTypstTemplate(ctx({ cover: true, logoPath: '/tmp/logo.png' }));
     expect(out).toContain('#page(header: none, footer: none)[');
     expect(out).toContain('image("/tmp/logo.png", height: 24mm)');
   });
 
-  it('copertina: solo i campi scelti', () => {
+  it('cover: only the chosen fields', () => {
     const out = buildTypstTemplate(ctx({ cover: true, template: tpl({ cover: { fields: ['title', 'date'] } }) }));
     expect(out).toContain('meta-date');
     expect(out).not.toContain('meta-subtitle))');
   });
 
-  it('slot logo senza file conta come vuoto', () => {
+  it('a logo slot without a file counts as empty', () => {
     const out = buildTypstTemplate(ctx({ template: tpl({ header: { left: { type: 'logo' } } }) }));
     expect(out).toContain('header: none,');
   });
 
-  it('skipFirstPage nasconde la banda sulla prima pagina fisica', () => {
+  it('skipFirstPage hides the band on the first physical page', () => {
     const t = tpl({ header: { right: { type: 'text', value: '{title}' }, skipFirstPage: true } });
     expect(buildTypstTemplate(ctx({ template: t }))).toContain('here().page() > 1');
   });
 
-  it('indice e righe alternate', () => {
+  it('table of contents and striped rows', () => {
     const out = buildTypstTemplate(ctx({ toc: true, template: tpl({ blocks: { tableStriped: true } }) }));
     expect(out).toContain('#outline(depth: 3)');
     expect(out).toContain('calc.even(y)');
   });
 
-  it('il titolo di ripiego è escapato', () => {
-    const out = buildTypstTemplate(ctx({ fallbackTitle: 'rapporto "$"' }));
-    expect(out).toContain(`$else$#${typstString('rapporto "$"')}$endif$`);
+  it('the fallback title is escaped', () => {
+    const out = buildTypstTemplate(ctx({ fallbackTitle: 'report "$"' }));
+    expect(out).toContain(`$else$#${typstString('report "$"')}$endif$`);
+  });
+
+  it('sets the document language from the template', () => {
+    expect(buildTypstTemplate(ctx())).toContain('lang: "en"');
+    expect(buildTypstTemplate(ctx({ template: tpl({ language: 'it' }) }))).toContain('lang: "it"');
   });
 });
 
-describe.runIf(hasTools)('compilazione reale con pandoc e typst', () => {
+describe.runIf(hasTools)('real compilation with pandoc and typst', () => {
   const md = [
     '---',
-    'title: "Titolo $ \\"strano\\""',
+    'title: "Title $ \\"odd\\""',
     'author: [A, B]',
     '---',
     '',
-    '# Uno',
+    '# One',
     '',
-    'Testo *enfasi* e `codice`.',
+    'Text *emphasis* and `code`.',
     '',
-    '> citazione',
+    '> quote',
     '',
     '| a | b |',
     '|---|---|',
@@ -110,23 +115,23 @@ describe.runIf(hasTools)('compilazione reale con pandoc e typst', () => {
     '',
     '    let x = 1;',
     '',
-    '## Due',
+    '## Two',
     '',
     '---',
     '',
-    'Fine.',
+    'End.',
     '',
   ].join('\n');
 
   const cases: [string, Record<string, unknown>, Partial<TypstContext>][] = [
     ['standard', {}, {}],
     [
-      'copertina, indice, numerazione, logo e testo speciale in testata',
+      'cover, table of contents, numbering, logo and special text in the header',
       {
         headings: { numbered: true },
         header: {
           left: { type: 'logo' },
-          right: { type: 'text', value: 'Prezzo $5 "citato" #hash \\ <b> & co {title}' },
+          right: { type: 'text', value: 'Price $5 "quoted" #hash \\ <b> & co {title}' },
           rule: true,
           skipFirstPage: true,
         },
@@ -135,7 +140,7 @@ describe.runIf(hasTools)('compilazione reale con pandoc e typst', () => {
       },
       { cover: true, toc: true },
     ],
-    ['Letter orizzontale', { page: { size: 'Letter', orientation: 'landscape' } }, {}],
+    ['landscape Letter', { page: { size: 'Letter', orientation: 'landscape' } }, {}],
   ];
 
   it.each(cases)('%s', async (_name, over, flags) => {
@@ -152,23 +157,23 @@ describe.runIf(hasTools)('compilazione reale con pandoc e typst', () => {
     expect((await readFile(join(dir, 'doc.pdf'))).subarray(0, 4).toString()).toBe('%PDF');
   });
 
-  it('images.lua: percorsi assoluti, immagini mancanti e remote irraggiungibili', async () => {
-    const dir = join(await tempDir(), 'cartella con spazi è');
+  it('images.lua: absolute paths, missing images and unreachable remote images', async () => {
+    const dir = join(await tempDir(), 'caf\u00e9 folder');
     await mkdir(join(dir, 'img'), { recursive: true });
     await writeFile(join(dir, 'img', 'p.png'), makePng(4, 4));
-    await writeFile(join(dir, 'img', 'spazio uno.png'), makePng(4, 4));
-    const input = '![spazio](<img/spazio uno.png>)\n\n![uno](img/p.png)\n\n![manca](nope.png)\n\n![remota](http://127.0.0.1:9/x.png)\n';
+    await writeFile(join(dir, 'img', 'space one.png'), makePng(4, 4));
+    const input = '![space](<img/space one.png>)\n\n![one](img/p.png)\n\n![missing](nope.png)\n\n![remote](http://127.0.0.1:9/x.png)\n';
     const r = await run('pandoc', ['-f', 'markdown', '-t', 'typst', '--lua-filter', join(assetsDir, 'filters', 'images.lua')], {
       input,
       env: { MDPRESS_BASE: dir, MDPRESS_WORKDIR: dir },
     });
     const out = r.stdout.toString('utf8');
     expect(out).toContain(join(dir, 'img', 'p.png'));
-    expect(out).toContain(join(dir, 'img', 'spazio uno.png'));
-    expect(out).toContain('manca');
+    expect(out).toContain(join(dir, 'img', 'space one.png'));
+    expect(out).toContain('missing');
     expect(out).not.toContain('nope.png');
     expect(out).not.toContain('127.0.0.1');
-    expect(r.stderr).toContain('mdpress: immagine non trovata');
-    expect(r.stderr).toContain('mdpress: immagine non raggiungibile');
+    expect(r.stderr).toContain('mdpress:image-not-found:nope.png');
+    expect(r.stderr).toContain('mdpress:image-unreachable:http://127.0.0.1:9/x.png');
   });
 });

@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { deflateSync } from 'node:zlib';
 import JSZip from 'jszip';
 
-/** true se pandoc e typst sono installati: i test di integrazione girano solo in quel caso. */
+/** true when pandoc and typst are installed: integration tests only run in that case. */
 export const hasTools = ['pandoc', 'typst'].every((cmd) => spawnSync(cmd, ['--version']).status === 0);
 
 export function tempDir(prefix = 'mdpress-test-'): Promise<string> {
@@ -22,7 +22,7 @@ function crc32(buf: Buffer): number {
   return (crc ^ 0xffffffff) >>> 0;
 }
 
-/** PNG RGB a tinta unita, per logo e immagini di test. */
+/** Solid-colour RGB PNG, for test logos and images. */
 export function makePng(width: number, height: number, rgb: [number, number, number] = [11, 61, 145]): Buffer {
   const row = Buffer.concat([Buffer.from([0]), Buffer.from(Array.from({ length: width }, () => rgb).flat())]);
   const raw = Buffer.concat(Array.from({ length: height }, () => row));

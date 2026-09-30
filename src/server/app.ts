@@ -13,7 +13,7 @@ import { MdpressError, localizeIssue, type ErrorCode } from '../core/errors.js';
 import { listFonts } from '../core/fonts.js';
 import { webDistDir } from '../core/paths.js';
 import { renderSample } from '../core/preview.js';
-import { render } from '../core/render.js';
+import { localizeWarning, render } from '../core/render.js';
 import { parseTemplate } from '../core/theme.js';
 
 const STATUS: Record<ErrorCode, number> = {
@@ -174,7 +174,7 @@ export async function buildServer(opts: { catalog?: Catalog } = {}): Promise<Fas
     return reply
       .type(format === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
       .header('content-disposition', contentDisposition(`${stem}.${format}`))
-      .header('x-mdpress-warnings', encodeURIComponent(JSON.stringify(result.warnings)))
+      .header('x-mdpress-warnings', encodeURIComponent(JSON.stringify(result.warnings.map((w) => localizeWarning(w, 'en')))))
       .send(result.data);
   });
 

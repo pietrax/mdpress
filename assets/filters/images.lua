@@ -1,12 +1,9 @@
--- mdpress: prepara le immagini per l'output Typst.
--- MDPRESS_BASE: cartella dell'md (per i percorsi relativi); MDPRESS_WORKDIR: dove salvare le immagini remote.
+-- mdpress: prepares images for Typst output.
+-- MDPRESS_BASE: folder of the md file (for relative paths); MDPRESS_WORKDIR: where remote images are saved.
+-- Problems are reported on stderr as mdpress:image-not-found:<src> and mdpress:image-unreachable:<src>.
 local base = os.getenv('MDPRESS_BASE')
 local workdir = os.getenv('MDPRESS_WORKDIR')
 local count = 0
-
-local function warn(message)
-  io.stderr:write('mdpress: ' .. message .. '\n')
-end
 
 local function exists(path)
   local f = io.open(path, 'rb')
@@ -26,7 +23,7 @@ function Image(img)
   if src:match('^https?://') then
     local ok, mime, contents = pcall(pandoc.mediabag.fetch, src)
     if not ok or not contents or not workdir then
-      warn('immagine non raggiungibile, sostituita dal testo alternativo: ' .. src)
+      io.stderr:write('mdpress:image-unreachable:' .. src .. '\n')
       return img.caption
     end
     count = count + 1
@@ -42,7 +39,7 @@ function Image(img)
     return img
   end
 
-  -- pandoc passa le sorgenti locali percent-encoded: prova il percorso letterale, poi quello decodificato.
+  -- pandoc passes local sources percent-encoded: try the literal path, then the decoded one.
   local decoded = src:gsub('%%(%x%x)', function(h)
     return string.char(tonumber(h, 16))
   end)
@@ -57,7 +54,7 @@ function Image(img)
     path = resolve(decoded)
   end
   if not exists(path) then
-    warn('immagine non trovata, sostituita dal testo alternativo: ' .. src)
+    io.stderr:write('mdpress:image-not-found:' .. src .. '\n')
     return img.caption
   end
   img.src = path

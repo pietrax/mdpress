@@ -6,6 +6,7 @@ import { defaultTemplateRef } from './config.js';
 import { assertDeps } from './deps.js';
 import { buildReferenceDocx, finalizeDocx } from './docx.js';
 import { MdpressError } from './errors.js';
+import { t, type Language, type Params } from '../i18n/index.js';
 import { CommandError, run } from './exec.js';
 import { readFrontmatter, type DocMeta } from './frontmatter.js';
 import { resolveOptions, type EffectiveOptions, type Format, type RenderOverrides } from './options.js';
@@ -17,9 +18,9 @@ export type RenderKind = Format | 'png';
 
 export interface RenderRequest {
   markdown: string;
-  /** Cartella rispetto a cui risolvere le immagini relative. */
+  /** Folder that relative image paths are resolved against. */
   baseDir: string;
-  /** Titolo usato per {title} e copertina se il front-matter non lo ha. */
+  /** Title used for {title} and the cover when the front-matter has none. */
   fallbackTitle: string;
   template: Template;
   logoPath: string | null;
@@ -28,9 +29,14 @@ export interface RenderRequest {
   debug?: boolean;
 }
 
+export interface Warning {
+  key: string;
+  params: Params;
+}
+
 export interface RenderResult {
   data: Buffer;
-  warnings: string[];
+  warnings: Warning[];
   workDir: string | null;
 }
 
@@ -39,16 +45,23 @@ const FILTERS = {
   docx: join(assetsDir, 'filters', 'docx.lua'),
 };
 
-export function collectWarnings(...stderrs: string[]): string[] {
-  const out = new Set<string>();
+export function localizeWarning(warning: Warning, lang: Language): string {
+  return t(warning.key, warning.params, lang);
+}
+
+export function collectWarnings(...stderrs: string[]): Warning[] {
+  const out = new Map<string, Warning>();
+  const add = (w: Warning) => out.set(JSON.stringify(w), w);
   for (const stderr of stderrs) {
     for (const m of stderr.matchAll(/unknown font family: ([^\n]+)/g)) {
-      out.add(`Font non installato: ${m[1].trim()} (uso un font di ripiego)`);
+      add({ key: 'warnings.fontMissing', params: { font: m[1].trim() } });
     }
-    for (const m of stderr.matchAll(/^\[WARNING\] (.+)$/gm)) out.add(m[1].trim());
-    for (const m of stderr.matchAll(/^mdpress: (.+)$/gm)) out.add(m[1].trim());
+    for (const m of stderr.matchAll(/^\[WARNING\] (.+)$/gm)) add({ key: 'warnings.tool', params: { details: m[1].trim() } });
+    for (const m of stderr.matchAll(/^mdpress:image-(not-found|unreachable):(.+)$/gm)) {
+      add({ key: m[1] === 'not-found' ? 'warnings.imageNotFound' : 'warnings.imageUnreachable', params: { src: m[2].trim() } });
+    }
   }
-  return [...out];
+  return [...out.values()];
 }
 
 function cleanStderr(stderr: string): string {
@@ -88,12 +101,12 @@ async function renderTypst(req: RenderRequest, eff: EffectiveOptions, work: stri
 }
 
 async function renderDocx(req: RenderRequest, meta: DocMeta, eff: EffectiveOptions, work: string) {
-  const t = req.template;
+  const template = req.template;
   const logo = req.logoPath
     ? { data: await readFile(req.logoPath), ext: extname(req.logoPath).slice(1).toLowerCase() === 'png' ? ('png' as const) : ('jpg' as const) }
     : null;
   const reference = await buildReferenceDocx(await defaultReferenceDocx(), {
-    template: t,
+    template,
     meta: { ...meta, title: meta.title ?? req.fallbackTitle },
     cover: eff.cover,
     logo,
@@ -106,21 +119,21 @@ async function renderDocx(req: RenderRequest, meta: DocMeta, eff: EffectiveOptio
     `--resource-path=${req.baseDir}`,
     '-o', 'out.docx',
   ];
-  if (t.headings.numbered) args.push('--number-sections');
-  if (eff.toc) args.push('--toc', '--toc-depth=3', '-M', 'toc-title=Indice');
+  if (template.headings.numbered) args.push('--number-sections');
+  if (eff.toc) args.push('--toc', '--toc-depth=3', '-M', `toc-title=${t('document.tocTitle', {}, template.language)}`);
   const pandoc = await run('pandoc', args, {
     cwd: work,
     env: {
       MDPRESS_COVER: eff.cover ? '1' : '',
       MDPRESS_TOC: eff.toc ? '1' : '',
-      MDPRESS_LOGO: eff.cover && t.cover.showLogo && req.logoPath ? req.logoPath : '',
-      MDPRESS_LOGO_HEIGHT: `${t.logo.height * 2}mm`,
-      MDPRESS_FIELDS: t.cover.fields.length > 0 ? t.cover.fields.join(',') : 'none',
+      MDPRESS_LOGO: eff.cover && template.cover.showLogo && req.logoPath ? req.logoPath : '',
+      MDPRESS_LOGO_HEIGHT: `${template.logo.height * 2}mm`,
+      MDPRESS_FIELDS: template.cover.fields.length > 0 ? template.cover.fields.join(',') : 'none',
       MDPRESS_FALLBACK_TITLE: req.fallbackTitle,
     },
   });
-  // Il logo in copertina finirebbe nel titolo delle proprietà del documento: lo si riscrive in chiaro.
-  const plainTitle = eff.cover && t.cover.showLogo && req.logoPath ? (meta.title ?? req.fallbackTitle) : undefined;
+  // The cover logo would end up in the document properties title: rewrite it as plain text.
+  const plainTitle = eff.cover && template.cover.showLogo && req.logoPath ? (meta.title ?? req.fallbackTitle) : undefined;
   const data = await finalizeDocx(await readFile(join(work, 'out.docx')), { updateFields: eff.toc, title: plainTitle });
   return { data, warnings: collectWarnings(pandoc.stderr) };
 }
@@ -172,7 +185,7 @@ export interface RenderFileOptions {
 
 export interface RenderFileResult {
   outputs: string[];
-  warnings: string[];
+  warnings: Warning[];
   workDirs: string[];
 }
 
@@ -202,7 +215,9 @@ export async function renderFile(file: string, opts: RenderFileOptions): Promise
     await mkdir(dirname(paths[kind]), { recursive: true });
     await writeFile(paths[kind], r.data);
     result.outputs.push(paths[kind]);
-    for (const w of r.warnings) if (!result.warnings.includes(w)) result.warnings.push(w);
+    for (const w of r.warnings) {
+      if (!result.warnings.some((x) => JSON.stringify(x) === JSON.stringify(w))) result.warnings.push(w);
+    }
     if (r.workDir) result.workDirs.push(r.workDir);
   }
   return result;

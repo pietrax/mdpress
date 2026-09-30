@@ -1,5 +1,6 @@
 import JSZip from 'jszip';
 import { imageSize } from 'image-size';
+import type { Language } from '../i18n/index.js';
 import type { DocMeta } from './frontmatter.js';
 import { PAGE_SIZES_MM, SCALE, lighten, parsePlaceholders, type Band, type Slot, type Template } from './theme.js';
 
@@ -18,6 +19,7 @@ const PART_NS =
   'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"';
 const REL_TYPE = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const LOGO_REL_ID = 'rIdMdpressLogo';
+const PROOFING: Record<Language, string> = { en: 'en-US', it: 'it-IT' };
 
 export function xmlEscape(s: string): string {
   return s
@@ -160,7 +162,7 @@ function replaceStyles(xml: string, defs: StyleDef[], t: Template): string {
   }
   out = out.replace(
     /<w:rPrDefault>[\s\S]*?<\/w:rPrDefault>/,
-    () => `<w:rPrDefault><w:rPr>${fonts(t.fonts.body)}${size(t.fonts.size)}<w:lang w:val="it-IT" w:eastAsia="en-US" w:bidi="ar-SA"/></w:rPr></w:rPrDefault>`,
+    () => `<w:rPrDefault><w:rPr>${fonts(t.fonts.body)}${size(t.fonts.size)}<w:lang w:val="${PROOFING[t.language]}" w:eastAsia="en-US" w:bidi="ar-SA"/></w:rPr></w:rPrDefault>`,
   );
   return out.replace('</w:styles>', () => `${defs.map(styleXml).join('')}</w:styles>`);
 }
@@ -231,7 +233,7 @@ function bandXml(b: Band, kind: 'hdr' | 'ftr', ctx: DocxContext, docPrId: number
     `<w:tblGrid>${`<w:gridCol w:w="${col}"/>`.repeat(3)}</w:tblGrid><w:tr>${cells}</w:tr></w:tbl>`;
   const edge = kind === 'hdr' ? 'bottom' : 'top';
   const rule = `<w:p><w:pPr><w:pBdr><w:${edge} w:val="single" w:sz="4" w:space="1" w:color="${hex(t.colors.accent)}"/></w:pBdr><w:spacing w:before="0" w:after="0" w:line="120" w:lineRule="exact"/></w:pPr></w:p>`;
-  // Word vuole un paragrafo dopo una tabella: quello del filetto, o uno vuoto e basso.
+  // Word requires a paragraph after a table: the rule paragraph, or an empty low one.
   const spacer = '<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="120" w:lineRule="exact"/></w:pPr></w:p>';
   const body = kind === 'hdr' ? table + (b.rule ? rule : spacer) : (b.rule ? rule : '') + table + spacer;
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:${kind} ${PART_NS}>${body}</w:${kind}>`;
@@ -241,7 +243,7 @@ function sectPr(ctx: DocxContext, has: { header: boolean; footer: boolean }): st
   const t = ctx.template;
   const { w, h } = pageDims(t);
   const m = t.page.margins;
-  // Con la copertina la prima pagina non ha mai testata né piè di pagina (come nel PDF).
+  // With a cover the first page never has a header or footer (as in the PDF).
   const titlePg = ctx.cover || (has.header && t.header.skipFirstPage) || (has.footer && t.footer.skipFirstPage);
   const parts: string[] = [];
   const refs = (tag: 'headerReference' | 'footerReference', id: string, skip: boolean) => {
@@ -263,7 +265,7 @@ export async function buildReferenceDocx(base: Buffer, ctx: DocxContext): Promis
   const zip = await JSZip.loadAsync(base);
   const read = async (path: string) => {
     const file = zip.file(path);
-    if (!file) throw new Error(`reference.docx: manca ${path}`);
+    if (!file) throw new Error(`reference.docx: missing ${path}`);
     return file.async('string');
   };
 
@@ -316,11 +318,11 @@ export async function buildReferenceDocx(base: Buffer, ctx: DocxContext): Promis
   return zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
 }
 
-/** Elementi di settings.xml che nello schema seguono updateFields. */
+/** settings.xml elements that follow updateFields in the schema. */
 const AFTER_UPDATE_FIELDS =
   /<(?:w:hdrShapeDefaults|w:footnotePr|w:endnotePr|w:compat|w:docVars|w:rsids|m:mathPr|w:attachedSchema|w:themeFontLang|w:clrSchemeMapping|w:doNotIncludeSubdocsInStats|w:doNotAutoCompressPictures|w:forceUpgrade|w:captions|w:readModeInkLockDown|w:smartTagType|sl:schemaLibrary|w:shapeDefaults|w:doNotEmbedSmartTags|w:decimalSymbol|w:listSeparator)\b/;
 
-/** Nel testo alternativo pandoc scrive il percorso locale dell'immagine anche in pic:cNvPr: lo allinea al testo di wp:docPr. */
+/** pandoc also writes the local image path into the alt text of pic:cNvPr: align it with the wp:docPr text. */
 function scrubImagePaths(xml: string): string {
   return xml.replace(/<w:drawing>[\s\S]*?<\/w:drawing>/g, (drawing) => {
     const descr = /<wp:docPr\b[^>]*?\bdescr="([^"]*)"/.exec(drawing)?.[1] ?? '';

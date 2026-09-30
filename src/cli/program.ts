@@ -8,7 +8,7 @@ import { checkDeps } from '../core/deps.js';
 import { MdpressError, exitCodeFor, localizeIssue } from '../core/errors.js';
 import { parseFormats } from '../core/options.js';
 import { packageRoot } from '../core/paths.js';
-import { renderFile } from '../core/render.js';
+import { localizeWarning, renderFile } from '../core/render.js';
 
 export interface CliIO {
   out(line: string): void;
@@ -53,7 +53,7 @@ function buildProgram(io: CliIO, state: State, catalog: Catalog): Command {
         debug: o.debug,
         catalog,
       });
-      for (const w of result.warnings) io.err(`⚠ ${w}`);
+      for (const w of result.warnings) io.err(`⚠ ${localizeWarning(w, 'en')}`);
       for (const p of result.outputs) io.out(`✓ ${p}`);
       for (const d of result.workDirs) io.out(`Cartella di lavoro: ${d}`);
     });

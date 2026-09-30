@@ -1,41 +1,41 @@
 ---
-title: Documento di esempio
-subtitle: Anteprima del template
-author: Mario Rossi
-date: 30 settembre 2026
+title: Sample document
+subtitle: Template preview
+author: Jane Doe
+date: September 30, 2026
 ---
 
-# Introduzione
+# Introduction
 
-Questo documento mostra come il template impagina **titoli**, *enfasi*, `codice in linea`
-e [collegamenti](https://example.com). Il testo scorre su più righe per far vedere
-interlinea, margini e font del corpo.
+This document shows how the template lays out **headings**, *emphasis*, `inline code`
+and [links](https://example.com). The text runs over several lines to show line
+spacing, margins and the body font.
 
-## Elenchi e citazioni
+## Lists and quotes
 
-- Primo punto dell'elenco
-- Secondo punto, un po' più lungo per andare a capo e mostrare il rientro
-- Terzo punto
+- First item of the list
+- Second item, a little longer so that it wraps and shows the indentation
+- Third item
 
-> Una citazione mette in evidenza un passaggio importante del documento.
+> A quote highlights an important passage of the document.
 
-## Tabella
+## Table
 
-| Voce        | Q1  | Q2  | Q3  |
-|-------------|----:|----:|----:|
-| Ricavi      | 120 | 135 | 150 |
-| Costi       |  80 |  82 |  90 |
-| Margine     |  40 |  53 |  60 |
-| Dipendenti  |  12 |  13 |  15 |
+| Item      | Q1  | Q2  | Q3  |
+|-----------|----:|----:|----:|
+| Revenue   | 120 | 135 | 150 |
+| Costs     |  80 |  82 |  90 |
+| Margin    |  40 |  53 |  60 |
+| Employees |  12 |  13 |  15 |
 
-### Codice
+### Code
 
 ```js
-function saluta(nome) {
-  return `Ciao, ${nome}!`;
+function greet(name) {
+  return `Hello, ${name}!`;
 }
 ```
 
-# Conclusioni
+# Conclusions
 
-Fine del documento di esempio.
+End of the sample document.
