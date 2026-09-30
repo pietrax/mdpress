@@ -146,7 +146,7 @@ function buildProgram(io: CliIO, state: State, catalog: Catalog, lang: Language)
       }
       const { startServer } = await import('../server/app.js');
       try {
-        const { url } = await startServer({ port, open: o.open, catalog });
+        const { url } = await startServer({ port, open: o.open, catalog, language: lang });
         io.out(tr('cli.serve.listening', { url }));
       } catch (err) {
         if ((err as NodeJS.ErrnoException).code === 'EADDRINUSE') {

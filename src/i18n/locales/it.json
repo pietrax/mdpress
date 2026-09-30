@@ -24,7 +24,11 @@
     "logoUpload": "Carica un logo PNG o JPG",
     "noLogo": "Questo template non ha un logo",
     "zipUpload": "Carica un file .zip",
-    "markdownMissing": "Markdown mancante"
+    "markdownMissing": "Markdown mancante",
+    "internal": "Errore interno del server",
+    "hostNotAllowed": "Host non consentito",
+    "headerMissing": "Header x-mdpress mancante",
+    "notFound": "Non trovato"
   },
   "validation": {
     "notObject": "il template deve essere un oggetto JSON",
