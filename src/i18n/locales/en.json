@@ -50,5 +50,60 @@
   },
   "document": {
     "tocTitle": "Contents"
+  },
+  "cli": {
+    "description": "Lay out Markdown as PDF and DOCX with customizable templates",
+    "errorPrefix": "Error: {message}",
+    "issueRoot": "(root)",
+    "unexpectedError": "Unexpected error: {details}",
+    "options": {
+      "lang": "interface language (en, it)"
+    },
+    "render": {
+      "description": "Lay out a Markdown file",
+      "template": "template id or slug",
+      "format": "pdf, docx or pdf,docx",
+      "output": "output file or folder (with a trailing /)",
+      "toc": "include the table of contents",
+      "noToc": "exclude the table of contents",
+      "cover": "force the cover page",
+      "noCover": "exclude the cover page",
+      "debug": "keep the work directory",
+      "written": "✓ {path}",
+      "warning": "⚠ {message}",
+      "workDir": "Work directory: {dir}"
+    },
+    "templates": {
+      "description": "Manage the template catalog",
+      "list": "List templates",
+      "show": "Show a template's JSON",
+      "new": "Create a template (empty or a copy of another)",
+      "import": "Import a template from a .zip",
+      "export": "Export a template to a .zip",
+      "delete": "Delete a user template",
+      "default": "Show or set the default template",
+      "builtin": "(built-in)",
+      "from": "template to duplicate",
+      "name": "display name",
+      "exportOutput": "destination .zip file",
+      "created": "✓ created {slug} ({id}) in {dir}",
+      "imported": "✓ imported {slug} ({id})",
+      "exported": "✓ {path}",
+      "deleted": "✓ deleted {ref}",
+      "defaultReset": "The deleted template was the default: the default is back to standard.",
+      "defaultSet": "✓ default template: {slug} ({id})"
+    },
+    "serve": {
+      "description": "Start the local web interface",
+      "port": "port",
+      "noOpen": "do not open the browser",
+      "listening": "mdpress is listening on {url} (Ctrl+C to quit)"
+    },
+    "doctor": {
+      "description": "Check pandoc and typst",
+      "found": "{mark} {name} {version} (requires ≥ {min})",
+      "notFound": "{mark} {name} not found (requires ≥ {min})",
+      "install": "Install the dependencies with: brew install pandoc typst"
+    }
   }
 }

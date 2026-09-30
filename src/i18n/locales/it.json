@@ -50,5 +50,60 @@
   },
   "document": {
     "tocTitle": "Indice"
+  },
+  "cli": {
+    "description": "Impagina Markdown in PDF e DOCX con template personalizzabili",
+    "errorPrefix": "Errore: {message}",
+    "issueRoot": "(radice)",
+    "unexpectedError": "Errore inatteso: {details}",
+    "options": {
+      "lang": "lingua dell’interfaccia (en, it)"
+    },
+    "render": {
+      "description": "Impagina un file Markdown",
+      "template": "id o slug del template",
+      "format": "pdf, docx o pdf,docx",
+      "output": "file o cartella (con / finale) di destinazione",
+      "toc": "includi l’indice",
+      "noToc": "escludi l’indice",
+      "cover": "forza la copertina",
+      "noCover": "escludi la copertina",
+      "debug": "conserva la cartella di lavoro",
+      "written": "✓ {path}",
+      "warning": "⚠ {message}",
+      "workDir": "Cartella di lavoro: {dir}"
+    },
+    "templates": {
+      "description": "Gestisce il catalogo dei template",
+      "list": "Elenca i template",
+      "show": "Mostra il JSON di un template",
+      "new": "Crea un template (vuoto o copia di un altro)",
+      "import": "Importa un template da .zip",
+      "export": "Esporta un template in .zip",
+      "delete": "Elimina un template utente",
+      "default": "Mostra o imposta il template di default",
+      "builtin": "(built-in)",
+      "from": "template da duplicare",
+      "name": "nome leggibile",
+      "exportOutput": "file .zip di destinazione",
+      "created": "✓ creato {slug} ({id}) in {dir}",
+      "imported": "✓ importato {slug} ({id})",
+      "exported": "✓ {path}",
+      "deleted": "✓ eliminato {ref}",
+      "defaultReset": "Il template eliminato era quello di default: il default è tornato a standard.",
+      "defaultSet": "✓ template di default: {slug} ({id})"
+    },
+    "serve": {
+      "description": "Avvia l’interfaccia web locale",
+      "port": "porta",
+      "noOpen": "non aprire il browser",
+      "listening": "mdpress è in ascolto su {url} (Ctrl+C per uscire)"
+    },
+    "doctor": {
+      "description": "Verifica pandoc e typst",
+      "found": "{mark} {name} {version} (richiesta ≥ {min})",
+      "notFound": "{mark} {name} non trovato (richiesta ≥ {min})",
+      "install": "Installa le dipendenze con: brew install pandoc typst"
+    }
   }
 }
