@@ -98,6 +98,14 @@ describe('buildReferenceDocx', () => {
     expect(doc).not.toContain('footnotePr');
   });
 
+  it('con la copertina la prima pagina è senza testata e piè di pagina anche se skipFirstPage è false', async () => {
+    const { text } = await build({ header: { right: { type: 'text', value: 'x' } } }, { cover: true });
+    const doc = await text('word/document.xml');
+    expect(doc).toContain('<w:titlePg/>');
+    expect(doc).toContain('w:type="default"');
+    expect(doc).not.toContain('w:type="first"');
+  });
+
   it('orizzontale: scambia le dimensioni', async () => {
     const { text } = await build({ page: { orientation: 'landscape' } });
     expect(await text('word/document.xml')).toContain('<w:pgSz w:w="16838" w:h="11906" w:orient="landscape"/>');

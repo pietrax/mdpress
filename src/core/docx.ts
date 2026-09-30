@@ -241,11 +241,12 @@ function sectPr(ctx: DocxContext, has: { header: boolean; footer: boolean }): st
   const t = ctx.template;
   const { w, h } = pageDims(t);
   const m = t.page.margins;
-  const titlePg = (has.header && t.header.skipFirstPage) || (has.footer && t.footer.skipFirstPage);
+  // Con la copertina la prima pagina non ha mai testata né piè di pagina (come nel PDF).
+  const titlePg = ctx.cover || (has.header && t.header.skipFirstPage) || (has.footer && t.footer.skipFirstPage);
   const parts: string[] = [];
   const refs = (tag: 'headerReference' | 'footerReference', id: string, skip: boolean) => {
     parts.push(`<w:${tag} w:type="default" r:id="${id}"/>`);
-    if (titlePg && !skip) parts.push(`<w:${tag} w:type="first" r:id="${id}"/>`);
+    if (titlePg && !skip && !ctx.cover) parts.push(`<w:${tag} w:type="first" r:id="${id}"/>`);
   };
   if (has.header) refs('headerReference', 'rIdMdpressHeader', t.header.skipFirstPage);
   if (has.footer) refs('footerReference', 'rIdMdpressFooter', t.footer.skipFirstPage);
@@ -319,19 +320,52 @@ export async function buildReferenceDocx(base: Buffer, ctx: DocxContext): Promis
 const AFTER_UPDATE_FIELDS =
   /<(?:w:hdrShapeDefaults|w:footnotePr|w:endnotePr|w:compat|w:docVars|w:rsids|m:mathPr|w:attachedSchema|w:themeFontLang|w:clrSchemeMapping|w:doNotIncludeSubdocsInStats|w:doNotAutoCompressPictures|w:forceUpgrade|w:captions|w:readModeInkLockDown|w:smartTagType|sl:schemaLibrary|w:shapeDefaults|w:doNotEmbedSmartTags|w:decimalSymbol|w:listSeparator)\b/;
 
-export async function finalizeDocx(docx: Buffer, opts: { updateFields: boolean }): Promise<Buffer> {
-  if (!opts.updateFields) return docx;
+/** Nel testo alternativo pandoc scrive il percorso locale dell'immagine anche in pic:cNvPr: lo allinea al testo di wp:docPr. */
+function scrubImagePaths(xml: string): string {
+  return xml.replace(/<w:drawing>[\s\S]*?<\/w:drawing>/g, (drawing) => {
+    const descr = /<wp:docPr\b[^>]*?\bdescr="([^"]*)"/.exec(drawing)?.[1] ?? '';
+    return drawing.replace(/(<pic:cNvPr\b[^>]*?\bdescr=")[^"]*"/, (_m, head: string) => `${head}${descr}"`);
+  });
+}
+
+export async function finalizeDocx(docx: Buffer, opts: { updateFields: boolean; title?: string }): Promise<Buffer> {
   const zip = await JSZip.loadAsync(docx);
-  const file = zip.file('word/settings.xml');
-  if (!file) return docx;
-  const xml = await file.async('string');
-  if (xml.includes('w:updateFields')) return docx;
-  const tag = '<w:updateFields w:val="true"/>';
-  const match = AFTER_UPDATE_FIELDS.exec(xml);
-  const updated =
-    match && match.index !== undefined
-      ? xml.slice(0, match.index) + tag + xml.slice(match.index)
-      : xml.replace('</w:settings>', () => `${tag}</w:settings>`);
-  zip.file('word/settings.xml', updated);
-  return zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
+  let changed = false;
+
+  const documentFile = zip.file('word/document.xml');
+  if (documentFile) {
+    const xml = await documentFile.async('string');
+    const scrubbed = scrubImagePaths(xml);
+    if (scrubbed !== xml) {
+      zip.file('word/document.xml', scrubbed);
+      changed = true;
+    }
+  }
+
+  const coreFile = zip.file('docProps/core.xml');
+  if (coreFile && opts.title !== undefined) {
+    const xml = await coreFile.async('string');
+    const updated = xml.replace(/<dc:title>[\s\S]*?<\/dc:title>/, () => `<dc:title>${xmlEscape(opts.title ?? '')}</dc:title>`);
+    if (updated !== xml) {
+      zip.file('docProps/core.xml', updated);
+      changed = true;
+    }
+  }
+
+  const settingsFile = opts.updateFields ? zip.file('word/settings.xml') : null;
+  if (settingsFile) {
+    const xml = await settingsFile.async('string');
+    if (!xml.includes('w:updateFields')) {
+      const tag = '<w:updateFields w:val="true"/>';
+      const match = AFTER_UPDATE_FIELDS.exec(xml);
+      const updated =
+        match && match.index !== undefined
+          ? xml.slice(0, match.index) + tag + xml.slice(match.index)
+          : xml.replace('</w:settings>', () => `${tag}</w:settings>`);
+      zip.file('word/settings.xml', updated);
+      changed = true;
+    }
+  }
+
+  return changed ? zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' }) : docx;
 }

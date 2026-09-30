@@ -119,7 +119,9 @@ async function renderDocx(req: RenderRequest, meta: DocMeta, eff: EffectiveOptio
       MDPRESS_FALLBACK_TITLE: req.fallbackTitle,
     },
   });
-  const data = await finalizeDocx(await readFile(join(work, 'out.docx')), { updateFields: eff.toc });
+  // Il logo in copertina finirebbe nel titolo delle proprietà del documento: lo si riscrive in chiaro.
+  const plainTitle = eff.cover && t.cover.showLogo && req.logoPath ? (meta.title ?? req.fallbackTitle) : undefined;
+  const data = await finalizeDocx(await readFile(join(work, 'out.docx')), { updateFields: eff.toc, title: plainTitle });
   return { data, warnings: collectWarnings(pandoc.stderr) };
 }
 

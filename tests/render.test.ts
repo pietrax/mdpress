@@ -83,6 +83,17 @@ describe.runIf(hasTools)('render con pandoc e typst', () => {
     }
   });
 
+  it('report con logo in copertina: nessun percorso locale nel DOCX, logo nel paragrafo Title, titolo pulito', async () => {
+    const r = await renderFile(join(dir, 'doc.md'), { templateRef: 'mdprep01', formats: ['docx'], output: join(dir, 'out', 'rep'), catalog });
+    const docx = await readFile(r.outputs[0]);
+    const documentXml = (await unzipText(docx, 'word/document.xml')) ?? '';
+    expect(documentXml).not.toContain(join(builtinTemplatesDir, 'report', 'logo.png'));
+    expect(documentXml).not.toContain(dir);
+    const title = /<w:p>(?:(?!<\/w:p>)[\s\S])*?w:val="Title"[\s\S]*?<\/w:p>/.exec(documentXml)?.[0] ?? '';
+    expect(title).toContain('<w:drawing>');
+    expect(await unzipText(docx, 'docProps/core.xml')).toContain('<dc:title>Relazione</dc:title>');
+  });
+
   it('immagine con spazio nel nome: presente in PDF e DOCX, nessun warning', async () => {
     await writeFile(join(dir, 'img', 'foto uno.png'), makePng(40, 30));
     await writeFile(join(dir, 'spazi.md'), '# T\n\n![x](<img/foto uno.png>)\n');

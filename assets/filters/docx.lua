@@ -54,7 +54,7 @@ function Pandoc(doc)
 
   local logo = env('MDPRESS_LOGO')
   if cover and logo and meta.title ~= nil then
-    local image = pandoc.Image({}, logo, '', { height = env('MDPRESS_LOGO_HEIGHT') or '24mm' })
+    local image = pandoc.Image({ pandoc.Str('Logo') }, logo, '', { height = env('MDPRESS_LOGO_HEIGHT') or '24mm' })
     meta.title = pandoc.Inlines({ image, pandoc.LineBreak() }) .. as_inlines(meta.title)
   end
 
