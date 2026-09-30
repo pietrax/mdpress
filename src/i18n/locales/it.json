@@ -260,7 +260,11 @@
         "right": "Destra"
       },
       "rule": "Filetto",
-      "skipFirstPage": "Nascondi sulla prima pagina"
+      "skipFirstPage": "Nascondi sulla prima pagina",
+      "textSize": "Dimensione testo (pt)",
+      "textSizeHint": "Lascia vuoto per la dimensione automatica",
+      "bold": "Grassetto",
+      "centerOnlyHint": "Se è usata solo la posizione centrale, occupa tutta la larghezza"
     }
   }
 }

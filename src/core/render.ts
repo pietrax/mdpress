@@ -8,6 +8,7 @@ import { buildReferenceDocx, finalizeDocx } from './docx.js';
 import { MdpressError } from './errors.js';
 import { t, type Language, type Params } from '../i18n/index.js';
 import { CommandError, run } from './exec.js';
+import { listFonts } from './fonts.js';
 import { readFrontmatter, type DocMeta } from './frontmatter.js';
 import { resolveOptions, type EffectiveOptions, type Format, type RenderOverrides } from './options.js';
 import { assetsDir } from './paths.js';
@@ -76,6 +77,16 @@ function cleanStderr(stderr: string): string {
   return stderr.trim().split('\n').slice(0, 40).join('\n');
 }
 
+let installedFonts: Promise<string[] | undefined> | null = null;
+/** Font families Typst can see, cached per process; undefined if `typst fonts` fails. */
+function typstFonts(): Promise<string[] | undefined> {
+  installedFonts ??= listFonts().catch(() => {
+    installedFonts = null;
+    return undefined;
+  });
+  return installedFonts;
+}
+
 let baseReference: Promise<Buffer> | null = null;
 function defaultReferenceDocx(): Promise<Buffer> {
   baseReference ??= run('pandoc', ['--print-default-data-file', 'reference.docx'])
@@ -94,6 +105,7 @@ async function renderTypst(req: RenderRequest, eff: EffectiveOptions, work: stri
     cover: eff.cover,
     toc: eff.toc,
     fallbackTitle: req.fallbackTitle,
+    fonts: await typstFonts(),
   });
   await writeFile(join(work, 'template.typ'), template);
   const pandoc = await run(

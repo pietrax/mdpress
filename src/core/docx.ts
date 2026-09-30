@@ -193,10 +193,19 @@ function slotRuns(value: string, ctx: DocxContext, rPr: string): string {
     .join('');
 }
 
-function logoDrawing(logo: NonNullable<DocxContext['logo']>, heightMm: number, docPrId: number): string {
+/** 1 twip = 635 EMU. */
+const TWIP_EMU = 635;
+
+function logoDrawing(logo: NonNullable<DocxContext['logo']>, heightMm: number, docPrId: number, maxWidthTwips: number): string {
   const dims = imageSize(logo.data);
-  const cy = emu(heightMm);
-  const cx = Math.round((cy * (dims.width ?? 1)) / (dims.height ?? 1));
+  let cy = emu(heightMm);
+  let cx = Math.round((cy * (dims.width ?? 1)) / (dims.height ?? 1));
+  // Shrink the logo to the cell width, keeping its proportions.
+  const maxCx = maxWidthTwips * TWIP_EMU;
+  if (cx > maxCx) {
+    cy = Math.round((cy * maxCx) / cx);
+    cx = maxCx;
+  }
   return (
     `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/>` +
     `<wp:docPr id="${docPrId}" name="mdpress-logo"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">` +
@@ -211,26 +220,35 @@ function bandXml(b: Band, kind: 'hdr' | 'ftr', ctx: DocxContext, docPrId: number
   const t = ctx.template;
   const slots = [b.left, b.center, b.right];
   if (!b.rule && slots.every((s) => isBlank(s, ctx))) return null;
-  const rPr = `<w:rPr>${color(t.colors.muted)}${size(t.fonts.size * SCALE.small)}</w:rPr>`;
+  const rPr = `<w:rPr>${b.bold ? '<w:b/><w:bCs/>' : ''}${color(t.colors.muted)}${size(b.textSize ?? t.fonts.size * SCALE.small)}</w:rPr>`;
   const { w } = pageDims(t);
-  const col = Math.floor(twips(w - t.page.margins.left - t.page.margins.right) / 3);
-  const jc = ['left', 'center', 'right'];
-  const cells = slots
-    .map((slot, i) => {
+  const full = twips(w - t.page.margins.left - t.page.margins.right);
+  // Only the center slot in use: one full-width cell (one line, logo not squeezed into a third).
+  const centerOnly = isBlank(b.left, ctx) && isBlank(b.right, ctx);
+  const cellSlots: { slot: Slot; jc: string }[] = centerOnly
+    ? [{ slot: b.center, jc: 'center' }]
+    : [
+        { slot: b.left, jc: 'left' },
+        { slot: b.center, jc: 'center' },
+        { slot: b.right, jc: 'right' },
+      ];
+  const col = Math.floor(full / cellSlots.length);
+  const cells = cellSlots
+    .map(({ slot, jc }) => {
       const inner =
         slot.type === 'text'
           ? slotRuns(slot.value, ctx, rPr)
           : slot.type === 'logo' && ctx.logo
-            ? logoDrawing(ctx.logo, t.logo.height, docPrId)
+            ? logoDrawing(ctx.logo, t.logo.height, docPrId, col)
             : '';
-      return `<w:tc><w:tcPr><w:tcW w:w="${col}" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:spacing w:before="0" w:after="0"/><w:jc w:val="${jc[i]}"/></w:pPr>${inner}</w:p></w:tc>`;
+      return `<w:tc><w:tcPr><w:tcW w:w="${col}" w:type="dxa"/></w:tcPr><w:p><w:pPr><w:spacing w:before="0" w:after="0"/><w:jc w:val="${jc}"/></w:pPr>${inner}</w:p></w:tc>`;
     })
     .join('');
   const nil = ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map((s) => `<w:${s} w:val="nil"/>`).join('');
   const table =
-    `<w:tbl><w:tblPr><w:tblW w:w="${col * 3}" w:type="dxa"/><w:tblBorders>${nil}</w:tblBorders><w:tblLayout w:type="fixed"/>` +
+    `<w:tbl><w:tblPr><w:tblW w:w="${col * cellSlots.length}" w:type="dxa"/><w:tblBorders>${nil}</w:tblBorders><w:tblLayout w:type="fixed"/>` +
     '<w:tblCellMar><w:left w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar></w:tblPr>' +
-    `<w:tblGrid>${`<w:gridCol w:w="${col}"/>`.repeat(3)}</w:tblGrid><w:tr>${cells}</w:tr></w:tbl>`;
+    `<w:tblGrid>${`<w:gridCol w:w="${col}"/>`.repeat(cellSlots.length)}</w:tblGrid><w:tr>${cells}</w:tr></w:tbl>`;
   const edge = kind === 'hdr' ? 'bottom' : 'top';
   const rule = `<w:p><w:pPr><w:pBdr><w:${edge} w:val="single" w:sz="4" w:space="1" w:color="${hex(t.colors.accent)}"/></w:pBdr><w:spacing w:before="0" w:after="0" w:line="120" w:lineRule="exact"/></w:pPr></w:p>`;
   // Word requires a paragraph after a table: the rule paragraph, or an empty low one.

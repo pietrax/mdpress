@@ -150,3 +150,32 @@ describe('finalizeDocx', () => {
     expect(await finalizeDocx(base, { updateFields: false })).toBe(base);
   });
 });
+
+describe('header and footer layout', () => {
+  it('uses a single full-width cell when only the center slot is filled', async () => {
+    const { text } = await build({ footer: { right: { type: 'empty' }, center: { type: 'text', value: 'contacts' } } });
+    const footer = await text('word/footer1.xml');
+    // A4 width 210 mm minus 20 + 20 mm margins = 170 mm = 9638 twips
+    expect(footer.match(/<w:gridCol /g)).toHaveLength(1);
+    expect(footer).toContain('<w:gridCol w:w="9638"/>');
+    expect(footer).toContain('<w:jc w:val="center"/>');
+  });
+
+  it('keeps three cells when a side slot is filled', async () => {
+    const { text } = await build();
+    expect((await text('word/footer1.xml')).match(/<w:gridCol /g)).toHaveLength(3);
+  });
+
+  it('applies the band text size and bold', async () => {
+    const { text } = await build({ footer: { textSize: 6.5, bold: true } });
+    expect(await text('word/footer1.xml')).toContain('<w:rPr><w:b/><w:bCs/><w:color w:val="6E7781"/><w:sz w:val="13"/><w:szCs w:val="13"/></w:rPr>');
+  });
+
+  it('scales the logo down to fit its column', async () => {
+    // 300x10 px logo at 12 mm height would be 360 mm wide: it must shrink to the 56 mm column
+    const { text } = await build({ header: { left: { type: 'logo' } } }, { logo: { data: makePng(300, 10), ext: 'png' } });
+    const header = await text('word/header1.xml');
+    const cx = Number(/<wp:extent cx="(\d+)"/.exec(header)?.[1]);
+    expect(cx).toBeLessThanOrEqual(Math.round((9638 / 3 / 1440) * 25.4 * 36000));
+  });
+});

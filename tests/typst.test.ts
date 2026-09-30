@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { buildTypstTemplate, textContent, typstString, type TypstContext } from '../src/core/typst.js';
+import { buildTypstTemplate, resolveTypstFont, textContent, typstString, type TypstContext } from '../src/core/typst.js';
 import { parseTemplate } from '../src/core/theme.js';
 import { run } from '../src/core/exec.js';
 import { assetsDir } from '../src/core/paths.js';
@@ -175,5 +175,48 @@ describe.runIf(hasTools)('real compilation with pandoc and typst', () => {
     expect(out).not.toContain('127.0.0.1');
     expect(r.stderr).toContain('mdpress:image-not-found:nope.png');
     expect(r.stderr).toContain('mdpress:image-unreachable:http://127.0.0.1:9/x.png');
+  });
+});
+
+describe('header and footer layout', () => {
+  it('uses the full width when only the center slot is filled', () => {
+    const out = buildTypstTemplate(ctx({ template: tpl({ footer: { right: { type: 'empty' }, center: { type: 'text', value: 'contacts' } } }) }));
+    expect(out).toContain('grid(columns: (1fr,), align: (center + horizon,), [#"contacts"])');
+  });
+
+  it('keeps three columns when a side slot is filled', () => {
+    expect(buildTypstTemplate(ctx())).toContain('grid(columns: (1fr, 1fr, 1fr)');
+  });
+
+  it('applies the band text size and bold', () => {
+    const out = buildTypstTemplate(ctx({ template: tpl({ footer: { textSize: 6.5, bold: true } }) }));
+    expect(out).toContain('set text(size: 6.5pt, weight: "bold", fill: c-muted)');
+  });
+
+  it('defaults the band text size to the small scale of the body size', () => {
+    expect(buildTypstTemplate(ctx())).toContain('set text(size: 9.02pt, weight: "regular", fill: c-muted)');
+  });
+
+  it('scales the logo down to fit its column', () => {
+    const out = buildTypstTemplate(ctx({ logoPath: '/tmp/logo.png', template: tpl({ header: { center: { type: 'logo' } } }) }));
+    expect(out).toContain('layout(size => {');
+    expect(out).toContain('measure(img).width > size.width');
+  });
+});
+
+describe('resolveTypstFont', () => {
+  it('keeps names Typst knows', () => {
+    expect(resolveTypstFont('Arial', ['Arial', 'DM Sans 9pt'])).toBe('Arial');
+  });
+  it('maps a variable font family to the name Typst lists', () => {
+    expect(resolveTypstFont('DM Sans', ['Arial', 'DM Sans 9pt'])).toBe('DM Sans 9pt');
+  });
+  it('matches case-insensitively and leaves unknown fonts unchanged', () => {
+    expect(resolveTypstFont('dm sans', ['DM Sans 9pt'])).toBe('DM Sans 9pt');
+    expect(resolveTypstFont('Missing Font', ['DM Sans 9pt'])).toBe('Missing Font');
+  });
+  it('is used for the body font when the font list is known', () => {
+    const out = buildTypstTemplate(ctx({ template: tpl({ fonts: { body: 'DM Sans' } }), fonts: ['DM Sans 9pt'] }));
+    expect(out).toContain('#set text(font: ("DM Sans 9pt",)');
   });
 });

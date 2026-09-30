@@ -6,6 +6,24 @@ export interface TypstContext {
   cover: boolean;
   toc: boolean;
   fallbackTitle: string;
+  /** Font families Typst can see (from `typst fonts`); used to resolve names like "DM Sans" → "DM Sans 9pt". */
+  fonts?: readonly string[];
+}
+
+/**
+ * Typst names variable fonts after their default instance (e.g. "DM Sans 9pt"), while Word and the
+ * system call the family "DM Sans". Returns the name Typst knows, or the input unchanged.
+ */
+export function resolveTypstFont(name: string, available: readonly string[]): string {
+  const wanted = name.trim().toLowerCase();
+  const exact = available.find((f) => f.toLowerCase() === wanted);
+  if (exact) return exact;
+  const variant = available.find((f) => f.toLowerCase().startsWith(`${wanted} `));
+  return variant ?? name;
+}
+
+function fontList(name: string, ctx: TypstContext): string {
+  return `(${typstString(ctx.fonts ? resolveTypstFont(name, ctx.fonts) : name)},)`;
 }
 
 const PAPER: Record<Template['page']['size'], string> = { A4: 'a4', A5: 'a5', Letter: 'us-letter' };
@@ -46,7 +64,12 @@ function isBlank(slot: Slot, ctx: TypstContext): boolean {
 function slotContent(slot: Slot, ctx: TypstContext): string {
   if (slot.type === 'text') return textContent(slot.value);
   if (slot.type === 'logo' && ctx.logoPath) {
-    return `image(${typstString(ctx.logoPath)}, height: ${ctx.template.logo.height}mm)`;
+    // Shrink the logo to the column width instead of letting it overflow and get clipped.
+    const path = typstString(ctx.logoPath);
+    return (
+      `layout(size => { let img = image(${path}, height: ${ctx.template.logo.height}mm); ` +
+      `if measure(img).width > size.width { image(${path}, width: size.width) } else { img } })`
+    );
   }
   return '[]';
 }
@@ -54,14 +77,18 @@ function slotContent(slot: Slot, ctx: TypstContext): string {
 function band(b: Band, ctx: TypstContext, kind: 'header' | 'footer'): string {
   const slots = [b.left, b.center, b.right];
   if (!b.rule && slots.every((s) => isBlank(s, ctx))) return 'none';
-  const grid =
-    'grid(columns: (1fr, 1fr, 1fr), align: (left + horizon, center + horizon, right + horizon), ' +
-    `${slots.map((s) => slotContent(s, ctx)).join(', ')})`;
+  // Only the center slot in use: give it the whole width (one line, logo not squeezed into a third).
+  const centerOnly = isBlank(b.left, ctx) && isBlank(b.right, ctx);
+  const grid = centerOnly
+    ? `grid(columns: (1fr,), align: (center + horizon,), ${slotContent(b.center, ctx)})`
+    : 'grid(columns: (1fr, 1fr, 1fr), align: (left + horizon, center + horizon, right + horizon), ' +
+      `${slots.map((s) => slotContent(s, ctx)).join(', ')})`;
   const rule = 'line(length: 100%, stroke: 0.5pt + c-accent)';
   const items = b.rule ? (kind === 'header' ? [grid, rule] : [rule, grid]) : [grid];
   const condition = b.skipFirstPage ? 'here().page() > 1' : 'true';
-  const size = pt(ctx.template.fonts.size * SCALE.small);
-  return `context { if ${condition} { set text(size: ${size}, fill: c-muted); stack(spacing: 4pt, ${items.join(', ')}) } }`;
+  const size = pt(b.textSize ?? ctx.template.fonts.size * SCALE.small);
+  const weight = b.bold ? 'bold' : 'regular';
+  return `context { if ${condition} { set text(size: ${size}, weight: "${weight}", fill: c-muted); stack(spacing: 4pt, ${items.join(', ')}) } }`;
 }
 
 function fieldLine(field: CoverFieldName, size: number, mode: 'cover' | 'block'): string {
@@ -130,10 +157,10 @@ export function buildTypstTemplate(ctx: TypstContext): string {
     `#set page(paper: "${PAPER[t.page.size]}", flipped: ${t.page.orientation === 'landscape'}, ` +
       `margin: (top: ${m.top}mm, bottom: ${m.bottom}mm, left: ${m.left}mm, right: ${m.right}mm), ` +
       `header: ${band(t.header, ctx, 'header')}, footer: ${band(t.footer, ctx, 'footer')})`,
-    `#set text(font: (${typstString(t.fonts.body)},), size: ${pt(s)}, fill: c-text, lang: "${t.language}")`,
+    `#set text(font: ${fontList(t.fonts.body, ctx)}, size: ${pt(s)}, fill: c-text, lang: "${t.language}")`,
     '#set par(leading: 0.7em, spacing: 1.2em)',
-    `#show raw: set text(font: (${typstString(t.fonts.mono)},))`,
-    `#show heading: set text(font: (${typstString(t.fonts.heading)},), fill: c-heading)`,
+    `#show raw: set text(font: ${fontList(t.fonts.mono, ctx)})`,
+    `#show heading: set text(font: ${fontList(t.fonts.heading, ctx)}, fill: c-heading)`,
     '#show heading: set block(above: 1.6em, below: 0.9em)',
     `#show heading.where(level: 1): set text(size: ${pt(s * SCALE.h1)})`,
     `#show heading.where(level: 2): set text(size: ${pt(s * SCALE.h2)})`,
