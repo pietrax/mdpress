@@ -5,7 +5,7 @@ import { Command, CommanderError } from 'commander';
 import { Catalog } from '../core/catalog.js';
 import { defaultTemplateRef, readConfig, writeConfig } from '../core/config.js';
 import { checkDeps } from '../core/deps.js';
-import { MdpressError, exitCodeFor } from '../core/errors.js';
+import { MdpressError, exitCodeFor, localizeIssue } from '../core/errors.js';
 import { parseFormats } from '../core/options.js';
 import { packageRoot } from '../core/paths.js';
 import { renderFile } from '../core/render.js';
@@ -88,7 +88,7 @@ function buildProgram(io: CliIO, state: State, catalog: Catalog): Command {
     try {
       data = await readFile(file);
     } catch {
-      throw new MdpressError(`File non trovato: ${file}`, 'BAD_INPUT');
+      throw new MdpressError('errors.fileNotFound', 'BAD_INPUT', { file });
     }
     const e = await catalog.importZip(data);
     io.out(`✓ importato ${e.template.slug} (${e.template.id})`);
@@ -138,7 +138,7 @@ function buildProgram(io: CliIO, state: State, catalog: Catalog): Command {
     .action(async (o: { port: string; open: boolean }) => {
       const port = Number(o.port);
       if (!Number.isInteger(port) || port < 1 || port > 65535) {
-        throw new MdpressError(`Porta non valida: ${o.port}`, 'BAD_INPUT');
+        throw new MdpressError('errors.portInvalid', 'BAD_INPUT', { port: o.port });
       }
       const { startServer } = await import('../server/app.js');
       try {
@@ -146,7 +146,7 @@ function buildProgram(io: CliIO, state: State, catalog: Catalog): Command {
         io.out(`mdpress è in ascolto su ${url} (Ctrl+C per uscire)`);
       } catch (err) {
         if ((err as NodeJS.ErrnoException).code === 'EADDRINUSE') {
-          throw new MdpressError(`La porta ${port} è già in uso: prova con --port ${port + 1}`, 'BAD_INPUT');
+          throw new MdpressError('errors.portInUse', 'BAD_INPUT', { port, next: port + 1 });
         }
         throw err;
       }
@@ -174,8 +174,8 @@ export async function main(argv: string[], io: CliIO = stdio, catalog: Catalog =
   } catch (err) {
     if (err instanceof CommanderError) return err.exitCode;
     if (err instanceof MdpressError) {
-      io.err(`Errore: ${err.message}`);
-      for (const issue of err.issues) io.err(`  ${issue.path || '(radice)'}: ${issue.message}`);
+      io.err(`Error: ${err.message}`);
+      for (const issue of err.issues) io.err(`  ${issue.path || '(root)'}: ${localizeIssue(issue, 'en')}`);
       return exitCodeFor(err);
     }
     io.err(`Errore inatteso: ${(err as Error).stack ?? String(err)}`);

@@ -17,7 +17,7 @@ export class CommandError extends Error {
     readonly exitCode: number | null,
     readonly stderr: string,
   ) {
-    super(`${command} è terminato con codice ${exitCode}: ${stderr.trim()}`);
+    super(`${command} exited with code ${exitCode}: ${stderr.trim()}`);
     this.name = 'CommandError';
   }
 }
@@ -36,7 +36,7 @@ export function run(command: string, args: string[], opts: RunOptions = {}): Pro
       else reject(new CommandError(command, code, stderr));
     });
     child.stdin.on('error', () => {
-      /* il processo può chiudere stdin prima di leggerlo: non è un errore */
+      /* the process may close stdin before reading it: not an error */
     });
     child.stdin.end(opts.input ?? '');
   });

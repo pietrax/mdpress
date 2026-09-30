@@ -137,8 +137,11 @@ export async function render(req: RenderRequest): Promise<RenderResult> {
     return { data, warnings, workDir: req.debug ? work : null };
   } catch (err) {
     if (err instanceof CommandError) {
-      const where = req.debug ? `\nCartella di lavoro: ${work}` : '';
-      throw new MdpressError(`Rendering fallito (${err.command}): ${cleanStderr(err.stderr)}${where}`, 'RENDER_FAILED');
+      throw new MdpressError(req.debug ? 'errors.renderFailedWorkDir' : 'errors.renderFailed', 'RENDER_FAILED', {
+        tool: err.command,
+        details: cleanStderr(err.stderr),
+        dir: work,
+      });
     }
     throw err;
   } finally {
@@ -179,7 +182,7 @@ export async function renderFile(file: string, opts: RenderFileOptions): Promise
   try {
     markdown = await readFile(input, 'utf8');
   } catch {
-    throw new MdpressError(`File non trovato: ${file}`, 'BAD_INPUT');
+    throw new MdpressError('errors.fileNotFound', 'BAD_INPUT', { file });
   }
   const catalog = opts.catalog ?? Catalog.default();
   const entry = await catalog.resolve(opts.templateRef ?? (await defaultTemplateRef()));

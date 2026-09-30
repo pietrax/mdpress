@@ -51,7 +51,7 @@ describe('mdpress templates', () => {
   it('new --from duplica', async () => {
     const r = await cli('templates', 'new', 'copia', '--from', 'standard');
     expect(r.code).toBe(0);
-    expect(JSON.parse((await cli('templates', 'show', 'copia')).out).name).toBe('Standard (copia)');
+    expect(JSON.parse((await cli('templates', 'show', 'copia')).out).name).toBe('Standard (copy)');
   });
 
   it('export e import', async () => {
@@ -73,11 +73,11 @@ describe('mdpress templates', () => {
 describe('mdpress render', () => {
   it('errori d’uso: template sconosciuto, formato e file', async () => {
     await writeFile(join(home, 'd.md'), '# x\n');
-    expect((await cli('render', join(home, 'd.md'), '-t', 'boh')).err).toContain('non trovato');
-    expect((await cli('render', join(home, 'd.md'), '-f', 'odt')).err).toContain('Formato non supportato');
+    expect((await cli('render', join(home, 'd.md'), '-t', 'boh')).err).toContain('not found');
+    expect((await cli('render', join(home, 'd.md'), '-f', 'odt')).err).toContain('Unsupported format');
     const missing = await cli('render', join(home, 'nessuno.md'));
     expect(missing.code).toBe(1);
-    expect(missing.err).toContain('File non trovato');
+    expect(missing.err).toContain('File not found');
   });
 
   it.runIf(hasTools)('produce PDF e DOCX', async () => {

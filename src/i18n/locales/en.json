@@ -18,7 +18,13 @@
     "renderFailed": "Rendering failed ({tool}): {details}",
     "renderFailedWorkDir": "Rendering failed ({tool}): {details}\nWork directory: {dir}",
     "dependenciesMissing": "Missing or outdated dependencies: {list}. Install them with: brew install pandoc typst",
-    "unsupportedLanguage": "Unsupported language: {lang} (supported: {supported})"
+    "unsupportedLanguage": "Unsupported language: {lang} (supported: {supported})",
+    "portInvalid": "Invalid port: {port}",
+    "portInUse": "Port {port} is already in use: try --port {next}",
+    "logoUpload": "Upload a PNG or JPG logo",
+    "noLogo": "This template has no logo",
+    "zipUpload": "Upload a .zip file",
+    "markdownMissing": "Markdown is missing"
   },
   "validation": {
     "notObject": "the template must be a JSON object",

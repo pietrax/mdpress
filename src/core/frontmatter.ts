@@ -12,7 +12,7 @@ export interface DocMeta {
 
 const FRONTMATTER_RE = /^﻿?---[ \t]*\r?\n([\s\S]*?)\r?\n(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/;
 
-/** Testo semplice per testate DOCX e segnaposti: liste unite con ", ", niente * e `. */
+/** Plain text for DOCX headers and placeholders: lists joined with ", ", no * or `. */
 function plain(value: unknown): string | undefined {
   if (value === null || value === undefined) return undefined;
   if (Array.isArray(value)) {
@@ -33,7 +33,7 @@ export function readFrontmatter(markdown: string): DocMeta {
   try {
     data = parse(match[1]);
   } catch (err) {
-    throw new MdpressError(`Front-matter YAML non valido: ${(err as Error).message}`, 'BAD_INPUT');
+    throw new MdpressError('errors.frontmatterInvalid', 'BAD_INPUT', { details: (err as Error).message });
   }
   if (!data || typeof data !== 'object' || Array.isArray(data)) return {};
   const d = data as Record<string, unknown>;

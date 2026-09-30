@@ -25,69 +25,69 @@ async function code(p: Promise<unknown>): Promise<string | undefined> {
 }
 
 describe('Catalog', () => {
-  it('elenca i built-in anche senza cartella utente', async () => {
+  it('lists built-ins even without a user folder', async () => {
     const list = await catalog.list();
     expect(list.find((e) => e.template.slug === 'standard')?.builtin).toBe(true);
   });
 
-  it('crea un template con id generato e lo risolve per id e slug', async () => {
-    const e = await catalog.create({ slug: 'mio', name: 'Mio' });
+  it('creates a template with a generated id and resolves it by id and slug', async () => {
+    const e = await catalog.create({ slug: 'mine', name: 'Mine' });
     expect(e.template.id).toMatch(/^[a-z0-9]{8}$/);
-    expect(e.dir).toBe(join(userDir, 'mio'));
+    expect(e.dir).toBe(join(userDir, 'mine'));
     expect(e.builtin).toBe(false);
-    expect((await catalog.resolve('mio')).template.id).toBe(e.template.id);
-    expect((await catalog.resolve(e.template.id)).template.slug).toBe('mio');
+    expect((await catalog.resolve('mine')).template.id).toBe(e.template.id);
+    expect((await catalog.resolve(e.template.id)).template.slug).toBe('mine');
   });
 
-  it('rifiuta slug già usati, anche dai built-in', async () => {
+  it('rejects slugs already in use, including built-in ones', async () => {
     expect(await code(catalog.create({ slug: 'standard', name: 'X' }))).toBe('SLUG_TAKEN');
   });
 
-  it('non sovrascrive una cartella con template.json illeggibile (create e duplicate)', async () => {
-    await mkdir(join(userDir, 'rotto'), { recursive: true });
-    const file = join(userDir, 'rotto', 'template.json');
-    await writeFile(file, '{ non valido');
+  it('does not overwrite a folder with an unreadable template.json (create and duplicate)', async () => {
+    await mkdir(join(userDir, 'broken'), { recursive: true });
+    const file = join(userDir, 'broken', 'template.json');
+    await writeFile(file, '{ not valid');
     const warn = vi.spyOn(process, 'emitWarning').mockImplementation(() => {});
-    expect(await code(catalog.create({ slug: 'rotto', name: 'X' }))).toBe('SLUG_TAKEN');
-    expect(await code(catalog.duplicate('standard', 'rotto'))).toBe('SLUG_TAKEN');
+    expect(await code(catalog.create({ slug: 'broken', name: 'X' }))).toBe('SLUG_TAKEN');
+    expect(await code(catalog.duplicate('standard', 'broken'))).toBe('SLUG_TAKEN');
     warn.mockRestore();
-    expect(await readFile(file, 'utf8')).toBe('{ non valido');
+    expect(await readFile(file, 'utf8')).toBe('{ not valid');
   });
 
-  it('non modifica né elimina i built-in', async () => {
+  it('neither edits nor deletes built-ins', async () => {
     expect(await code(catalog.update('standard', { slug: 'standard', name: 'X' }))).toBe('TEMPLATE_READONLY');
     expect(await code(catalog.remove('standard'))).toBe('TEMPLATE_READONLY');
     expect(await code(catalog.setLogo('standard', makePng(2, 2), 'png'))).toBe('TEMPLATE_READONLY');
   });
 
-  it("rinomina la cartella quando cambia lo slug, mantenendo l'id", async () => {
-    const e = await catalog.create({ slug: 'vecchio', name: 'V' });
-    const u = await catalog.update(e.template.id, { ...e.template, slug: 'nuovo' });
+  it("renames the folder when the slug changes, keeping the id", async () => {
+    const e = await catalog.create({ slug: 'old', name: 'V' });
+    const u = await catalog.update(e.template.id, { ...e.template, slug: 'new' });
     expect(u.template.id).toBe(e.template.id);
-    expect(existsSync(join(userDir, 'vecchio'))).toBe(false);
-    expect(existsSync(join(userDir, 'nuovo', 'template.json'))).toBe(true);
+    expect(existsSync(join(userDir, 'old'))).toBe(false);
+    expect(existsSync(join(userDir, 'new', 'template.json'))).toBe(true);
   });
 
-  it('update valida il contenuto', async () => {
+  it('update validates the content', async () => {
     const e = await catalog.create({ slug: 'a', name: 'A' });
-    const bad = { ...e.template, colors: { ...e.template.colors, text: 'nero' } };
+    const bad = { ...e.template, colors: { ...e.template.colors, text: 'black' } };
     expect(await code(catalog.update('a', bad))).toBe('TEMPLATE_INVALID');
   });
 
-  it('duplica un built-in in un template utente', async () => {
-    const d = await catalog.duplicate('standard', 'copia');
+  it('duplicates a built-in into a user template', async () => {
+    const d = await catalog.duplicate('standard', 'clone');
     expect(d.builtin).toBe(false);
-    expect(d.template.name).toBe('Standard (copia)');
+    expect(d.template.name).toBe('Standard (copy)');
     expect(d.template.id).not.toBe('mdpstd01');
   });
 
-  it('elimina un template utente', async () => {
-    await catalog.create({ slug: 'via', name: 'Via' });
-    await catalog.remove('via');
-    expect(await code(catalog.resolve('via'))).toBe('TEMPLATE_NOT_FOUND');
+  it('deletes a user template', async () => {
+    await catalog.create({ slug: 'gone', name: 'Gone' });
+    await catalog.remove('gone');
+    expect(await code(catalog.resolve('gone'))).toBe('TEMPLATE_NOT_FOUND');
   });
 
-  it('salva il logo e sostituisce quello precedente', async () => {
+  it('saves the logo and replaces the previous one', async () => {
     await catalog.create({ slug: 'logo', name: 'L' });
     const png = await catalog.setLogo('logo', makePng(40, 20), 'png');
     expect(png.template.logo.file).toBe('logo.png');
@@ -97,29 +97,29 @@ describe('Catalog', () => {
     expect(await readdir(jpg.dir)).not.toContain('logo.png');
   });
 
-  it('rifiuta un logo che non è PNG o JPG', async () => {
+  it('rejects a logo that is not PNG or JPG', async () => {
     await catalog.create({ slug: 'x', name: 'X' });
-    expect(await code(catalog.setLogo('x', Buffer.from('ciao'), 'png'))).toBe('BAD_INPUT');
+    expect(await code(catalog.setLogo('x', Buffer.from('text'), 'png'))).toBe('BAD_INPUT');
     expect(await code(catalog.setLogo('x', makePng(2, 2), 'svg'))).toBe('BAD_INPUT');
   });
 
-  it('ignora template utente corrotti', async () => {
-    await mkdir(join(userDir, 'rotto'), { recursive: true });
-    await writeFile(join(userDir, 'rotto', 'template.json'), '{ non json');
-    expect((await catalog.list()).some((e) => e.dir.endsWith('rotto'))).toBe(false);
+  it('ignores corrupted user templates', async () => {
+    await mkdir(join(userDir, 'broken'), { recursive: true });
+    await writeFile(join(userDir, 'broken', 'template.json'), '{ not json');
+    expect((await catalog.list()).some((e) => e.dir.endsWith('broken'))).toBe(false);
   });
 
-  it('non usa il riferimento come percorso', async () => {
+  it('does not use the reference as a path', async () => {
     expect(await code(catalog.resolve('../../etc'))).toBe('TEMPLATE_NOT_FOUND');
   });
 
-  it('rifiuta un logo che supera 2 MB', async () => {
+  it('rejects a logo larger than 2 MB', async () => {
     await catalog.create({ slug: 'x', name: 'X' });
     const tooLarge = Buffer.concat([makePng(2, 2), Buffer.alloc(2 * 1024 * 1024 + 1)]);
     expect(await code(catalog.setLogo('x', tooLarge, 'png'))).toBe('BAD_INPUT');
   });
 
-  it('scrive il nuovo logo prima di eliminare il vecchio', async () => {
+  it('writes the new logo before deleting the old one', async () => {
     await catalog.create({ slug: 'logo2', name: 'L2' });
     const png = await catalog.setLogo('logo2', makePng(40, 20), 'png');
     expect((await readdir(png.dir)).filter((f) => LOGO_FILE_RE.test(f))).toContain('logo.png');
@@ -128,14 +128,14 @@ describe('Catalog', () => {
     expect((await readdir(jpg.dir)).filter((f) => LOGO_FILE_RE.test(f))).toEqual(['logo.jpg']);
   });
 
-  it('aggiorna il template nella cartella corretta se la si è rinominata manualmente', async () => {
+  it('updates the template in the right folder if it was renamed by hand', async () => {
     const e = await catalog.create({ slug: 'orig', name: 'Orig' });
-    const renamed = join(userDir, 'cartella-diversa');
+    const renamed = join(userDir, 'other-folder');
     await mkdir(renamed, { recursive: true });
     await rm(join(userDir, 'orig'), { recursive: true });
     await writeFile(join(renamed, 'template.json'), JSON.stringify(e.template, null, 2) + '\n');
 
-    // Update without slug change should write to cartella-diversa, not create 'orig'
+    // Update without slug change should write to other-folder, not create 'orig'
     const updated = await catalog.update(e.template.id, { ...e.template, name: 'Updated' });
     expect(updated.dir).toBe(renamed);
     expect(updated.template.name).toBe('Updated');
@@ -143,25 +143,25 @@ describe('Catalog', () => {
     expect(existsSync(join(renamed, 'template.json'))).toBe(true);
   });
 
-  it('rifiuta di rinominare verso una cartella non-template esistente', async () => {
+  it('refuses to rename onto an existing non-template folder', async () => {
     await catalog.create({ slug: 'usr', name: 'U' });
-    await mkdir(join(userDir, 'occupato'), { recursive: true });
-    await writeFile(join(userDir, 'occupato', 'dummy'), 'content');
-    expect(await code(catalog.update('usr', { slug: 'occupato', name: 'U' }))).toBe('SLUG_TAKEN');
+    await mkdir(join(userDir, 'occupied'), { recursive: true });
+    await writeFile(join(userDir, 'occupied', 'dummy'), 'content');
+    expect(await code(catalog.update('usr', { slug: 'occupied', name: 'U' }))).toBe('SLUG_TAKEN');
   });
 
-  it('rifiuta di rinominare verso lo slug di un altro template utente', async () => {
+  it('refuses to rename onto the slug of another user template', async () => {
     const a = await catalog.create({ slug: 'a', name: 'A' });
     await catalog.create({ slug: 'b', name: 'B' });
     expect(await code(catalog.update('a', { ...a.template, slug: 'b' }))).toBe('SLUG_TAKEN');
   });
 
-  it('copia il logo quando duplica un template utente', async () => {
+  it('copies the logo when duplicating a user template', async () => {
     const orig = await catalog.create({ slug: 'withlogo', name: 'WL' });
     const withLogo = await catalog.setLogo('withlogo', makePng(20, 20), 'png');
     expect(withLogo.logoPath).not.toBeNull();
 
-    const dupe = await catalog.duplicate('withlogo', 'copialogo');
+    const dupe = await catalog.duplicate('withlogo', 'logoclone');
     expect(dupe.logoPath).not.toBeNull();
     expect(existsSync(dupe.logoPath!)).toBe(true);
     expect(await readdir(dupe.dir)).toContain('logo.png');

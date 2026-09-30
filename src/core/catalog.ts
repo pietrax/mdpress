@@ -49,10 +49,7 @@ export class Catalog {
     const all = await this.list();
     const hit = all.find((e) => e.template.id === ref) ?? all.find((e) => e.template.slug === ref);
     if (!hit) {
-      throw new MdpressError(
-        `Template "${ref}" non trovato. Usa "mdpress templates list" per vedere quelli disponibili.`,
-        'TEMPLATE_NOT_FOUND',
-      );
+      throw new MdpressError('errors.templateNotFound', 'TEMPLATE_NOT_FOUND', { ref });
     }
     return hit;
   }
@@ -83,7 +80,7 @@ export class Catalog {
       ...source.template,
       id: newId(),
       slug,
-      name: name ?? `${source.template.name} (copia)`,
+      name: name ?? `${source.template.name} (copy)`,
     });
     await this.assertSlugFree(template.slug);
     await this.assertDirFree(join(this.opts.userDir, template.slug));
@@ -104,16 +101,16 @@ export class Catalog {
     const entry = await this.writable(ref);
     const normalized = ext.toLowerCase() === 'jpeg' ? 'jpg' : ext.toLowerCase();
     if ((normalized !== 'png' && normalized !== 'jpg') || !isImage(data, normalized)) {
-      throw new MdpressError('Il logo deve essere un file PNG o JPG', 'BAD_INPUT');
+      throw new MdpressError('errors.logoType', 'BAD_INPUT');
     }
     if (data.length > 2 * 1024 * 1024) {
-      throw new MdpressError('Il logo supera i 2 MB', 'BAD_INPUT');
+      throw new MdpressError('errors.logoTooLarge', 'BAD_INPUT');
     }
     const file = `logo.${normalized}`;
     const filePath = join(entry.dir, file);
-    // Write new logo first
+    // Write the new logo first
     await writeFile(filePath, data);
-    // Update template with new logo file
+    // Update the template with the new logo file
     const updated = { ...entry.template, logo: { ...entry.template.logo, file } };
     await this.write(updated, entry.dir);
     // Remove old logo files (not the one just written)
@@ -140,17 +137,17 @@ export class Catalog {
     try {
       zip = await JSZip.loadAsync(data);
     } catch {
-      throw new MdpressError('Il file non è uno zip valido', 'BAD_INPUT');
+      throw new MdpressError('errors.zipInvalid', 'BAD_INPUT');
     }
     const jsonFile = zip.file(TEMPLATE_FILE) ?? zip.file(/(^|\/)template\.json$/)[0];
-    if (!jsonFile) throw new MdpressError('Lo zip non contiene template.json', 'BAD_INPUT');
+    if (!jsonFile) throw new MdpressError('errors.zipNoTemplate', 'BAD_INPUT');
     const prefix = jsonFile.name.slice(0, -TEMPLATE_FILE.length);
 
     let raw: unknown;
     try {
       raw = JSON.parse(await jsonFile.async('string'));
     } catch {
-      throw new MdpressError('template.json non è un JSON valido', 'BAD_INPUT');
+      throw new MdpressError('errors.zipBadJson', 'BAD_INPUT');
     }
     const input = (typeof raw === 'object' && raw !== null ? raw : {}) as Record<string, unknown>;
     const parsed = parseTemplate({
@@ -161,7 +158,7 @@ export class Catalog {
     const all = await this.list();
     const id = all.some((e) => e.template.id === parsed.id) ? newId() : parsed.id;
 
-    // Collect taken slugs from catalog and existing folder names
+    // Collect taken slugs from the catalog and existing folder names
     let existingDirs: string[] = [];
     try {
       existingDirs = await readdir(this.opts.userDir);
@@ -172,11 +169,11 @@ export class Catalog {
     const slug = uniqueSlug(parsed.slug, taken);
     const logoFile = parsed.logo.file ? zip.file(prefix + parsed.logo.file) : null;
 
-    // Check logo size limit if present
+    // Check the logo size limit if present
     if (logoFile) {
       const logoData = await logoFile.async('nodebuffer');
       if (logoData.length > 2 * 1024 * 1024) {
-        throw new MdpressError('Il logo supera i 2 MB', 'BAD_INPUT');
+        throw new MdpressError('errors.logoTooLarge', 'BAD_INPUT');
       }
     }
 
@@ -209,10 +206,7 @@ export class Catalog {
   private async writable(ref: string): Promise<CatalogEntry> {
     const entry = await this.resolve(ref);
     if (entry.builtin) {
-      throw new MdpressError(
-        `"${entry.template.name}" è un template built-in: duplicalo per modificarlo`,
-        'TEMPLATE_READONLY',
-      );
+      throw new MdpressError('errors.templateReadonly', 'TEMPLATE_READONLY', { name: entry.template.name });
     }
     return entry;
   }
@@ -220,14 +214,14 @@ export class Catalog {
   private async assertSlugFree(slug: string, exceptId?: string): Promise<void> {
     const all = await this.list();
     if (all.some((e) => e.template.slug === slug && e.template.id !== exceptId)) {
-      throw new MdpressError(`Esiste già un template con slug "${slug}"`, 'SLUG_TAKEN');
+      throw new MdpressError('errors.slugTaken', 'SLUG_TAKEN', { slug });
     }
   }
 
   private async assertDirFree(dir: string): Promise<void> {
     if (await exists(dir)) {
       const slug = dir.split('/').pop() || '';
-      throw new MdpressError(`Esiste già una cartella "${slug}"`, 'SLUG_TAKEN');
+      throw new MdpressError('errors.folderTaken', 'SLUG_TAKEN', { slug });
     }
   }
 
@@ -247,7 +241,7 @@ export class Catalog {
         const template = parseTemplate(JSON.parse(await readFile(file, 'utf8')));
         entries.push(await this.entry(template, dir, builtin));
       } catch (err) {
-        process.emitWarning(`mdpress: template ignorato in ${dir}: ${(err as Error).message}`);
+        process.emitWarning(`mdpress: skipped template in ${dir}: ${(err as Error).message}`);
       }
     }
     return entries.sort((a, b) => a.template.name.localeCompare(b.template.name));

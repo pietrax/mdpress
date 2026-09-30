@@ -172,7 +172,7 @@ describe.runIf(hasTools)('render con pandoc e typst', () => {
   });
 
   it('file inesistente e template sconosciuto danno errori chiari', async () => {
-    await expect(renderFile(join(dir, 'nessuno.md'), { formats: ['pdf'], catalog })).rejects.toThrow(/File non trovato/);
-    await expect(renderFile(join(dir, 'doc.md'), { templateRef: 'boh', formats: ['pdf'], catalog })).rejects.toThrow(/non trovato/);
+    await expect(renderFile(join(dir, 'nessuno.md'), { formats: ['pdf'], catalog })).rejects.toThrow(/File not found/);
+    await expect(renderFile(join(dir, 'doc.md'), { templateRef: 'boh', formats: ['pdf'], catalog })).rejects.toThrow(/not found/);
   });
 });

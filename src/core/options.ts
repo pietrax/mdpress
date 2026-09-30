@@ -23,11 +23,11 @@ export function resolveOptions(template: Template, meta: DocMeta, overrides: Ren
 
 export function parseFormats(value: string): Format[] {
   const parts = value.split(',').map((s) => s.trim()).filter(Boolean);
-  if (parts.length === 0) throw new MdpressError('Indica almeno un formato: pdf o docx', 'BAD_INPUT');
+  if (parts.length === 0) throw new MdpressError('errors.formatMissing', 'BAD_INPUT');
   const formats: Format[] = [];
   for (const part of parts) {
     if (part !== 'pdf' && part !== 'docx') {
-      throw new MdpressError(`Formato non supportato: ${part} (usa pdf, docx o pdf,docx)`, 'BAD_INPUT');
+      throw new MdpressError('errors.formatUnsupported', 'BAD_INPUT', { format: part });
     }
     if (!formats.includes(part)) formats.push(part);
   }

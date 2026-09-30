@@ -5,6 +5,7 @@ import { configPath } from './paths.js';
 
 export interface Config {
   defaultTemplate?: string;
+  language?: string;
 }
 
 export const BUILTIN_DEFAULT_TEMPLATE = 'standard';
@@ -21,7 +22,7 @@ export async function readConfig(): Promise<Config> {
     const parsed: unknown = JSON.parse(raw);
     return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed) ? (parsed as Config) : {};
   } catch {
-    throw new MdpressError(`config.json non valido: ${configPath()}`, 'BAD_INPUT');
+    throw new MdpressError('errors.configInvalid', 'BAD_INPUT', { path: configPath() });
   }
 }
 

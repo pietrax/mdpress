@@ -9,7 +9,7 @@ import open from 'open';
 import { Catalog, type CatalogEntry } from '../core/catalog.js';
 import { defaultTemplateRef } from '../core/config.js';
 import { checkDeps } from '../core/deps.js';
-import { MdpressError, type ErrorCode } from '../core/errors.js';
+import { MdpressError, localizeIssue, type ErrorCode } from '../core/errors.js';
 import { listFonts } from '../core/fonts.js';
 import { webDistDir } from '../core/paths.js';
 import { renderSample } from '../core/preview.js';
@@ -66,7 +66,13 @@ export async function buildServer(opts: { catalog?: Catalog } = {}): Promise<Fas
 
   app.setErrorHandler((err, _req, reply) => {
     if (err instanceof MdpressError) {
-      return reply.code(STATUS[err.code]).send({ error: err.message, code: err.code, errors: err.issues });
+      return reply.code(STATUS[err.code]).send({
+        error: err.message,
+        code: err.code,
+        key: err.key,
+        params: err.params,
+        errors: err.issues.map((i) => ({ ...i, message: localizeIssue(i, 'en') })),
+      });
     }
     const status = (err as { statusCode?: number }).statusCode ?? 500;
     if (status >= 500) {
@@ -101,13 +107,13 @@ export async function buildServer(opts: { catalog?: Catalog } = {}): Promise<Fas
   app.put<{ Params: { ref: string } }>('/api/templates/:ref/logo', { bodyLimit: 2 * 1024 * 1024 }, async (req) => {
     const type = req.headers['content-type'] ?? '';
     const ext = type.startsWith('image/png') ? 'png' : type.startsWith('image/jpeg') ? 'jpg' : null;
-    if (!ext || !Buffer.isBuffer(req.body)) throw new MdpressError('Carica un logo PNG o JPG', 'BAD_INPUT');
+    if (!ext || !Buffer.isBuffer(req.body)) throw new MdpressError('errors.logoUpload', 'BAD_INPUT');
     return summary(await catalog.setLogo(req.params.ref, req.body, ext));
   });
 
   app.get<{ Params: { ref: string } }>('/api/templates/:ref/logo', async (req, reply) => {
     const entry = await catalog.resolve(req.params.ref);
-    if (!entry.logoPath) throw new MdpressError('Questo template non ha un logo', 'TEMPLATE_NOT_FOUND');
+    if (!entry.logoPath) throw new MdpressError('errors.noLogo', 'TEMPLATE_NOT_FOUND');
     return reply.type(entry.logoPath.endsWith('.png') ? 'image/png' : 'image/jpeg').send(await readFile(entry.logoPath));
   });
 
@@ -132,7 +138,7 @@ export async function buildServer(opts: { catalog?: Catalog } = {}): Promise<Fas
   });
 
   app.post('/api/templates/import', { bodyLimit: 5 * 1024 * 1024 }, async (req, reply) => {
-    if (!Buffer.isBuffer(req.body)) throw new MdpressError('Carica un file .zip', 'BAD_INPUT');
+    if (!Buffer.isBuffer(req.body)) throw new MdpressError('errors.zipUpload', 'BAD_INPUT');
     return reply.code(201).send(summary(await catalog.importZip(req.body)));
   });
 
@@ -147,9 +153,9 @@ export async function buildServer(opts: { catalog?: Catalog } = {}): Promise<Fas
 
   app.post<{ Body: RenderBody | undefined }>('/api/render', async (req, reply) => {
     const b = req.body ?? {};
-    if (typeof b.markdown !== 'string' || !b.markdown.trim()) throw new MdpressError('Markdown mancante', 'BAD_INPUT');
+    if (typeof b.markdown !== 'string' || !b.markdown.trim()) throw new MdpressError('errors.markdownMissing', 'BAD_INPUT');
     const format = b.format === undefined ? 'pdf' : b.format;
-    if (format !== 'pdf' && format !== 'docx') throw new MdpressError('Formato non supportato', 'BAD_INPUT');
+    if (format !== 'pdf' && format !== 'docx') throw new MdpressError('errors.formatUnsupported', 'BAD_INPUT', { format: String(format) });
     const entry = await catalog.resolve(typeof b.template === 'string' ? b.template : await defaultTemplateRef());
     const rawName = typeof b.filename === 'string' ? b.filename : 'documento.md';
     const stem = rawName.replace(/\.(md|markdown)$/i, '').replace(/[^\p{L}\p{N}._ -]/gu, '_').trim() || 'documento';
