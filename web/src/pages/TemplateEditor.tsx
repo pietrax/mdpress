@@ -47,19 +47,24 @@ export function TemplateEditor({ initial, onClose, onDuplicate }: Props) {
   const [draft, setDraft] = useState<Template>(() => strip(initial));
   const [saved, setSaved] = useState<Template>(() => strip(initial));
   const [hasLogo, setHasLogo] = useState(initial.hasLogo);
-  const [issues, setIssues] = useState<Record<string, string>>({});
+  const [previewIssues, setPreviewIssues] = useState<Record<string, string>>({});
+  const [saveIssues, setSaveIssues] = useState<Record<string, string>>({});
+  const issues = { ...saveIssues, ...previewIssues };
   const [message, setMessage] = useState<string | null>(null);
   const [previewUrl, setPreview] = useObjectUrl();
   const [fonts, setFonts] = useState<string[]>([]);
   const [logoVersion, setLogoVersion] = useState(() => String(Date.now()));
   const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
   const err = (path: string) => issues[path];
-  const update = (fn: (d: Template) => void) =>
+  const update = (fn: (d: Template) => void) => {
+    setMessage(null);
+    setSaveIssues({});
     setDraft((prev) => {
       const next = structuredClone(prev);
       fn(next);
       return next;
     });
+  };
 
   useEffect(() => {
     api.fonts().then(setFonts).catch(() => setFonts([]));
@@ -73,12 +78,15 @@ export function TemplateEditor({ initial, onClose, onDuplicate }: Props) {
         .then((blob) => {
           if (cancelled) return;
           setPreview(blob);
-          setIssues({});
+          setPreviewIssues({});
         })
         .catch((e: unknown) => {
           if (cancelled) return;
-          if (e instanceof ApiError && e.issues.length > 0) setIssues(toMap(e.issues));
-          else setMessage((e as Error).message);
+          if (e instanceof ApiError && e.issues.length > 0) setPreviewIssues(toMap(e.issues));
+          else {
+            setPreviewIssues({});
+            setMessage((e as Error).message);
+          }
         });
       return () => {
         cancelled = true;
@@ -89,16 +97,17 @@ export function TemplateEditor({ initial, onClose, onDuplicate }: Props) {
   );
 
   async function save() {
+    const sent = draft;
     try {
-      const res = await api.updateTemplate(draft.id, draft);
+      const res = await api.updateTemplate(sent.id, sent);
       const t = strip(res);
-      setDraft(t);
+      setDraft((cur) => (JSON.stringify(cur) === JSON.stringify(sent) ? t : cur));
       setSaved(t);
       setHasLogo(res.hasLogo);
-      setIssues({});
+      setSaveIssues({});
       setMessage('Template salvato');
     } catch (e) {
-      if (e instanceof ApiError && e.issues.length > 0) setIssues(toMap(e.issues));
+      if (e instanceof ApiError && e.issues.length > 0) setSaveIssues(toMap(e.issues));
       setMessage((e as Error).message);
     }
   }
@@ -237,7 +246,16 @@ export function TemplateEditor({ initial, onClose, onDuplicate }: Props) {
                 }}
               />
             </label>
-            {t.logo.file && <button onClick={() => update((d) => { d.logo.file = null; })}>Rimuovi</button>}
+            {t.logo.file && <button
+              onClick={() =>
+                update((d) => {
+                  d.logo.file = null;
+                  for (const band of [d.header, d.footer])
+                    for (const pos of ['left', 'center', 'right'] as const)
+                      if (band[pos].type === 'logo') band[pos] = { type: 'empty' };
+                })
+              }
+            >Rimuovi</button>}
           </div>
           <Field label="Altezza del logo in testata (mm)" error={err('logo.height')} hint="In copertina il logo è alto il doppio">
             <NumberInput value={t.logo.height} min={4} max={60} onChange={(v) => update((d) => { d.logo.height = v; })} />

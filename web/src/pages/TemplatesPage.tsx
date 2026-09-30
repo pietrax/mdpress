@@ -70,15 +70,23 @@ export function TemplatesPage() {
 
   if (editing) {
     return (
-      <TemplateEditor
-        key={editing.id}
-        initial={editing}
-        onClose={() => {
-          setEditing(null);
-          void reload();
-        }}
-        onDuplicate={() => void duplicate(editing)}
-      />
+      <>
+        {error && (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        )}
+        <TemplateEditor
+          key={editing.id}
+          initial={editing}
+          onClose={() => {
+            setEditing(null);
+            setError(null);
+            void reload();
+          }}
+          onDuplicate={() => void duplicate(editing)}
+        />
+      </>
     );
   }
 
