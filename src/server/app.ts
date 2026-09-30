@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
+import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import fastifyStatic from '@fastify/static';
 import Fastify, { type FastifyInstance } from 'fastify';
@@ -56,7 +57,6 @@ export async function buildServer(opts: { catalog?: Catalog } = {}): Promise<Fas
   );
 
   app.addHook('onRequest', async (req, reply) => {
-    if (!req.url.startsWith('/api/')) return;
     const host = (req.headers.host ?? '').replace(/:\d+$/, '');
     if (!ALLOWED_HOSTS.includes(host)) return reply.code(403).send({ error: 'Host non consentito' });
     if (req.method !== 'GET' && req.method !== 'HEAD' && req.headers['x-mdpress'] !== '1') {
@@ -69,6 +69,10 @@ export async function buildServer(opts: { catalog?: Catalog } = {}): Promise<Fas
       return reply.code(STATUS[err.code]).send({ error: err.message, code: err.code, errors: err.issues });
     }
     const status = (err as { statusCode?: number }).statusCode ?? 500;
+    if (status >= 500) {
+      app.log.error(err);
+      return reply.code(status).send({ error: 'Errore interno del server' });
+    }
     return reply.code(status).send({ error: (err as Error).message });
   });
 
@@ -181,7 +185,7 @@ export async function buildServer(opts: { catalog?: Catalog } = {}): Promise<Fas
   if (existsSync(webDistDir)) {
     await app.register(fastifyStatic, { root: webDistDir });
     app.setNotFoundHandler((req, reply) =>
-      req.url.startsWith('/api/') ? reply.code(404).send({ error: 'Non trovato' }) : reply.sendFile('index.html'),
+      req.method !== 'GET' || req.url.startsWith('/api/') ? reply.code(404).send({ error: 'Non trovato' }) : reply.sendFile('index.html'),
     );
   }
 
@@ -191,7 +195,7 @@ export async function buildServer(opts: { catalog?: Catalog } = {}): Promise<Fas
 export async function startServer(opts: { port: number; open: boolean; catalog?: Catalog }) {
   const app = await buildServer({ catalog: opts.catalog });
   await app.listen({ host: '127.0.0.1', port: opts.port });
-  const url = `http://127.0.0.1:${opts.port}`;
+  const url = `http://127.0.0.1:${(app.server.address() as AddressInfo).port}`;
   if (opts.open) await open(url);
   return { url, close: () => app.close() };
 }

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { join } from 'node:path';
 import type { FastifyInstance } from 'fastify';
-import { buildServer } from '../src/server/app.js';
+import { buildServer, startServer } from '../src/server/app.js';
 import { Catalog } from '../src/core/catalog.js';
 import { builtinTemplatesDir } from '../src/core/paths.js';
 import { hasTools, makePng, tempDir } from './helpers.js';
@@ -22,6 +22,33 @@ describe('protezioni', () => {
   it('rifiuta richieste non-GET senza x-mdpress', async () => {
     const r = await app.inject({ method: 'POST', url: '/api/templates', payload: { slug: 'a', name: 'A' } });
     expect(r.statusCode).toBe(403);
+  });
+});
+
+describe('protezioni (regressioni)', () => {
+  it('URL con percent-encoding non aggira il controllo Host', async () => {
+    const r = await app.inject({ method: 'GET', url: '/%61pi/templates', headers: { host: 'evil.example' } });
+    expect(r.statusCode).toBe(403);
+  });
+  it('POST con percent-encoding richiede x-mdpress', async () => {
+    const r = await app.inject({ method: 'POST', url: '/%61pi/templates', headers: { host: 'localhost' }, payload: { slug: 'a', name: 'A' } });
+    expect(r.statusCode).toBe(403);
+  });
+  it('percorsi non-API con Host estraneo → 403', async () => {
+    const r = await app.inject({ method: 'GET', url: '/', headers: { host: 'evil.example' } });
+    expect(r.statusCode).toBe(403);
+  });
+  it('logo e import oltre il limite → 413', async () => {
+    const logo = await app.inject({ method: 'PUT', url: '/api/templates/standard/logo', headers: { ...H, 'content-type': 'image/png' }, payload: Buffer.alloc(2 * 1024 * 1024 + 10) });
+    expect(logo.statusCode).toBe(413);
+    const imp = await app.inject({ method: 'POST', url: '/api/templates/import', headers: { ...H, 'content-type': 'application/zip' }, payload: Buffer.alloc(5 * 1024 * 1024 + 10) });
+    expect(imp.statusCode).toBe(413);
+  });
+  it('startServer con porta 0 restituisce la porta reale', async () => {
+    const catalog = new Catalog({ builtinDir: builtinTemplatesDir, userDir: join(await tempDir(), 'templates') });
+    const s = await startServer({ port: 0, open: false, catalog });
+    expect(Number(new URL(s.url).port)).toBeGreaterThan(0);
+    await s.close();
   });
 });
 
