@@ -232,7 +232,7 @@ export function TemplateEditor({ initial, onClose, onDuplicate }: Props) {
               {tr('web.editor.uploadLogo')}
               <input
                 type="file"
-                accept="image/png,image/jpeg"
+                accept="image/png,image/jpeg,image/svg+xml"
                 hidden
                 onChange={(e) => {
                   const file = e.target.files?.[0];

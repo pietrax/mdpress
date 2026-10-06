@@ -22,6 +22,11 @@ function crc32(buf: Buffer): number {
   return (crc ^ 0xffffffff) >>> 0;
 }
 
+/** Small SVG logo (40×20 viewBox), for test logos. */
+export const SVG_LOGO = Buffer.from(
+  '<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20" viewBox="0 0 40 20"><rect width="40" height="20" fill="#0b3d91"/></svg>\n',
+);
+
 /** Solid-colour RGB PNG, for test logos and images. */
 export function makePng(width: number, height: number, rgb: [number, number, number] = [11, 61, 145]): Buffer {
   const row = Buffer.concat([Buffer.from([0]), Buffer.from(Array.from({ length: width }, () => rgb).flat())]);

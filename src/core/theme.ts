@@ -5,7 +5,7 @@ import { MdpressError, type Issue } from './errors.js';
 
 export const SLUG_RE = /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/;
 export const ID_RE = /^[a-z0-9]{8}$/;
-export const LOGO_FILE_RE = /^logo\.(png|jpg)$/;
+export const LOGO_FILE_RE = /^logo\.(png|jpg|svg)$/;
 export const newId = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 8);
 
 const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/);

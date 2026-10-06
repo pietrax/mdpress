@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { Catalog } from '../src/core/catalog.js';
 import { builtinTemplatesDir } from '../src/core/paths.js';
 import { LOGO_FILE_RE } from '../src/core/theme.js';
-import { makePng, tempDir } from './helpers.js';
+import { makePng, SVG_LOGO, tempDir } from './helpers.js';
 
 let userDir: string;
 let catalog: Catalog;
@@ -95,12 +95,17 @@ describe('Catalog', () => {
     const jpg = await catalog.setLogo('logo', Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0]), 'jpeg');
     expect(jpg.template.logo.file).toBe('logo.jpg');
     expect(await readdir(jpg.dir)).not.toContain('logo.png');
+    const svg = await catalog.setLogo('logo', SVG_LOGO, 'svg');
+    expect(svg.template.logo.file).toBe('logo.svg');
+    expect(await readdir(svg.dir)).not.toContain('logo.jpg');
   });
 
-  it('rejects a logo that is not PNG or JPG', async () => {
+  it('rejects a logo that is not PNG, JPG or SVG', async () => {
     await catalog.create({ slug: 'x', name: 'X' });
     expect(await code(catalog.setLogo('x', Buffer.from('text'), 'png'))).toBe('BAD_INPUT');
     expect(await code(catalog.setLogo('x', makePng(2, 2), 'svg'))).toBe('BAD_INPUT');
+    expect(await code(catalog.setLogo('x', Buffer.from('<html><body>no</body></html>'), 'svg'))).toBe('BAD_INPUT');
+    expect(await code(catalog.setLogo('x', makePng(2, 2), 'gif'))).toBe('BAD_INPUT');
   });
 
   it('ignores corrupted user templates', async () => {

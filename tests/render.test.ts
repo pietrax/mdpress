@@ -8,7 +8,7 @@ import { t } from '../src/i18n/index.js';
 import { collectWarnings, outputPaths, renderFile } from '../src/core/render.js';
 import { renderSample } from '../src/core/preview.js';
 import { parseTemplate } from '../src/core/theme.js';
-import { hasTools, makePng, pdfPageCount, tempDir, unzipText } from './helpers.js';
+import { hasTools, makePng, pdfPageCount, SVG_LOGO, tempDir, unzipText } from './helpers.js';
 
 describe('outputPaths', () => {
   it('without -o writes next to the md file', () => {
@@ -111,6 +111,18 @@ describe.runIf(hasTools)('render with pandoc and typst', () => {
     const title = /<w:p>(?:(?!<\/w:p>)[\s\S])*?w:val="Title"[\s\S]*?<\/w:p>/.exec(documentXml)?.[0] ?? '';
     expect(title).toContain('<w:drawing>');
     expect(await unzipText(docx, 'docProps/core.xml')).toContain('<dc:title>Report</dc:title>');
+  });
+
+  it('SVG logo in header and cover: PDF, and DOCX with PNG fallback and SVG', async () => {
+    await catalog.create({ slug: 'svg-logo', name: 'SVG', header: { center: { type: 'logo' } }, cover: { enabled: true } });
+    await catalog.setLogo('svg-logo', SVG_LOGO, 'svg');
+    const r = await renderFile(join(dir, 'doc.md'), { templateRef: 'svg-logo', formats: ['pdf', 'docx'], output: join(dir, 'out', 'svg'), catalog });
+    expect((await readFile(r.outputs[0])).subarray(0, 4).toString()).toBe('%PDF');
+    const docx = await readFile(r.outputs[1]);
+    expect(await unzipText(docx, 'word/media/mdpress-logo.svg')).toContain('<svg');
+    expect(await unzipText(docx, 'word/header1.xml')).toContain('asvg:svgBlip');
+    const title = /<w:p>(?:(?!<\/w:p>)[\s\S])*?w:val="Title"[\s\S]*?<\/w:p>/.exec((await unzipText(docx, 'word/document.xml')) ?? '')?.[0] ?? '';
+    expect(title).toContain('<w:drawing>');
   });
 
   it('image with a space in its name: present in PDF and DOCX, no warning', async () => {

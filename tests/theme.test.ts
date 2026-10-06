@@ -40,9 +40,10 @@ describe('parseTemplate', () => {
   it('rejects unknown schema versions', () => {
     expect(issuesOf({ ...base, schemaVersion: 2 })).toEqual(['schemaVersion']);
   });
-  it('accepts only logo.png or logo.jpg as the logo', () => {
+  it('accepts only logo.png, logo.jpg or logo.svg as the logo', () => {
     expect(issuesOf({ ...base, logo: { file: '../x.png' } })).toEqual(['logo.file']);
     expect(parseTemplate({ ...base, logo: { file: 'logo.jpg' } }).logo.file).toBe('logo.jpg');
+    expect(parseTemplate({ ...base, logo: { file: 'logo.svg' } }).logo.file).toBe('logo.svg');
   });
   it('rejects out-of-range margins', () => {
     expect(issuesOf({ ...base, page: { margins: { top: 200 } } })).toEqual(['page.margins.top']);
