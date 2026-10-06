@@ -27,6 +27,13 @@ export const SVG_LOGO = Buffer.from(
   '<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20" viewBox="0 0 40 20"><rect width="40" height="20" fill="#0b3d91"/></svg>\n',
 );
 
+/** SVG with an <image> pointing at `href`, for tests of external references. */
+export function svgLinking(href: string): Buffer {
+  return Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="20" height="20"><image xlink:href="${href}" width="20" height="20"/></svg>`,
+  );
+}
+
 /** Solid-colour RGB PNG, for test logos and images. */
 export function makePng(width: number, height: number, rgb: [number, number, number] = [11, 61, 145]): Buffer {
   const row = Buffer.concat([Buffer.from([0]), Buffer.from(Array.from({ length: width }, () => rgb).flat())]);

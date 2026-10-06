@@ -8,7 +8,7 @@ import { t } from '../src/i18n/index.js';
 import { collectWarnings, outputPaths, renderFile } from '../src/core/render.js';
 import { renderSample } from '../src/core/preview.js';
 import { parseTemplate } from '../src/core/theme.js';
-import { hasTools, makePng, pdfPageCount, SVG_LOGO, tempDir, unzipText } from './helpers.js';
+import { hasTools, makePng, pdfPageCount, SVG_LOGO, svgLinking, tempDir, unzipText } from './helpers.js';
 
 describe('outputPaths', () => {
   it('without -o writes next to the md file', () => {
@@ -123,6 +123,17 @@ describe.runIf(hasTools)('render with pandoc and typst', () => {
     expect(await unzipText(docx, 'word/header1.xml')).toContain('asvg:svgBlip');
     const title = /<w:p>(?:(?!<\/w:p>)[\s\S])*?w:val="Title"[\s\S]*?<\/w:p>/.exec((await unzipText(docx, 'word/document.xml')) ?? '')?.[0] ?? '';
     expect(title).toContain('<w:drawing>');
+  });
+
+  it('refuses an SVG logo placed by hand that refers to other files', async () => {
+    const entry = await catalog.create({ slug: 'svg-evil', name: 'Evil', header: { center: { type: 'logo' } } });
+    await catalog.setLogo('svg-evil', SVG_LOGO, 'svg');
+    await writeFile(join(entry.dir, 'logo.svg'), svgLinking('../../img/photo.png'));
+    for (const format of ['pdf', 'docx'] as const) {
+      await expect(renderFile(join(dir, 'doc.md'), { templateRef: 'svg-evil', formats: [format], output: join(dir, 'out', 'evil'), catalog })).rejects.toMatchObject({
+        code: 'BAD_INPUT',
+      });
+    }
   });
 
   it('image with a space in its name: present in PDF and DOCX, no warning', async () => {

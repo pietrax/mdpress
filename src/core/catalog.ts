@@ -35,6 +35,27 @@ function isImage(data: Buffer, ext: 'png' | 'jpg' | 'svg'): boolean {
   return data.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]));
 }
 
+/**
+ * True when an SVG draws only from itself. Typst loads linked images relative to the SVG,
+ * so a crafted logo could pull other local files into the output: every href and url()
+ * must point inside the SVG (#id) or be a data: URI, and entities may not carry markup.
+ */
+export function isSelfContainedSvg(data: Buffer): boolean {
+  const text = data.toString('utf8');
+  const local = (ref: string) => /^(?:#|data:)/i.test(ref.trim());
+  for (const m of text.matchAll(/<!ENTITY\s[^>]*?(["'])([\s\S]*?)\1/gi)) if (/[<&%]/.test(m[2])) return false;
+  if (/<!ENTITY[^>]*\b(?:SYSTEM|PUBLIC)\b/i.test(text) || /@import/i.test(text)) return false;
+  for (const m of text.matchAll(/\bhref\s*=\s*(["'])([\s\S]*?)\1/gi)) if (!local(m[2])) return false;
+  for (const m of text.matchAll(/url\(\s*(["']?)([\s\S]*?)\1\s*\)/gi)) if (!local(m[2])) return false;
+  return true;
+}
+
+function assertLogo(data: Buffer, ext: 'png' | 'jpg' | 'svg'): void {
+  if (!isImage(data, ext)) throw new MdpressError('errors.logoType', 'BAD_INPUT');
+  if (ext === 'svg' && !isSelfContainedSvg(data)) throw new MdpressError('errors.logoExternal', 'BAD_INPUT');
+  if (data.length > 2 * 1024 * 1024) throw new MdpressError('errors.logoTooLarge', 'BAD_INPUT');
+}
+
 export class Catalog {
   constructor(readonly opts: CatalogOptions) {}
 
@@ -101,12 +122,10 @@ export class Catalog {
   async setLogo(ref: string, data: Buffer, ext: string): Promise<CatalogEntry> {
     const entry = await this.writable(ref);
     const normalized = ext.toLowerCase() === 'jpeg' ? 'jpg' : ext.toLowerCase();
-    if ((normalized !== 'png' && normalized !== 'jpg' && normalized !== 'svg') || !isImage(data, normalized)) {
+    if (normalized !== 'png' && normalized !== 'jpg' && normalized !== 'svg') {
       throw new MdpressError('errors.logoType', 'BAD_INPUT');
     }
-    if (data.length > 2 * 1024 * 1024) {
-      throw new MdpressError('errors.logoTooLarge', 'BAD_INPUT');
-    }
+    assertLogo(data, normalized);
     const file = `logo.${normalized}`;
     const filePath = join(entry.dir, file);
     // Write the new logo first
@@ -170,12 +189,9 @@ export class Catalog {
     const slug = uniqueSlug(parsed.slug, taken);
     const logoFile = parsed.logo.file ? zip.file(prefix + parsed.logo.file) : null;
 
-    // Check the logo size limit if present
-    if (logoFile) {
-      const logoData = await logoFile.async('nodebuffer');
-      if (logoData.length > 2 * 1024 * 1024) {
-        throw new MdpressError('errors.logoTooLarge', 'BAD_INPUT');
-      }
+    // Same checks as an uploaded logo: the zip may come from anyone
+    if (logoFile && parsed.logo.file) {
+      assertLogo(await logoFile.async('nodebuffer'), parsed.logo.file.slice('logo.'.length) as 'png' | 'jpg' | 'svg');
     }
 
     const template: Template = {

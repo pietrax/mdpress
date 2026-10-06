@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { Catalog } from '../src/core/catalog.js';
 import { builtinTemplatesDir } from '../src/core/paths.js';
 import { LOGO_FILE_RE } from '../src/core/theme.js';
-import { makePng, SVG_LOGO, tempDir } from './helpers.js';
+import { makePng, SVG_LOGO, svgLinking, tempDir } from './helpers.js';
 
 let userDir: string;
 let catalog: Catalog;
@@ -106,6 +106,21 @@ describe('Catalog', () => {
     expect(await code(catalog.setLogo('x', makePng(2, 2), 'svg'))).toBe('BAD_INPUT');
     expect(await code(catalog.setLogo('x', Buffer.from('<html><body>no</body></html>'), 'svg'))).toBe('BAD_INPUT');
     expect(await code(catalog.setLogo('x', makePng(2, 2), 'gif'))).toBe('BAD_INPUT');
+  });
+
+  it('rejects an SVG logo that refers to other files, accepts internal and data: references', async () => {
+    await catalog.create({ slug: 'v', name: 'V' });
+    for (const ref of ['../secret.png', '/etc/hosts', 'file:///etc/hosts', 'https://example.com/x.png', '&x;', ' ../s.png']) {
+      expect(await code(catalog.setLogo('v', svgLinking(ref), 'svg'))).toBe('BAD_INPUT');
+    }
+    const style = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><style>rect { fill: url(../p.svg#g) }</style><rect/></svg>');
+    expect(await code(catalog.setLogo('v', style, 'svg'))).toBe('BAD_INPUT');
+    const entity = Buffer.from('<?xml version="1.0"?><!DOCTYPE svg [<!ENTITY x SYSTEM "/etc/hosts">]><svg xmlns="http://www.w3.org/2000/svg">&x;</svg>');
+    expect(await code(catalog.setLogo('v', entity, 'svg'))).toBe('BAD_INPUT');
+    expect(await code(catalog.setLogo('v', svgLinking('#shape'), 'svg'))).toBe('OK');
+    expect(await code(catalog.setLogo('v', svgLinking('data:image/png;base64,iVBORw0KGgo='), 'svg'))).toBe('OK');
+    const gradient = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><rect style="fill: url(#g)" fill="url( \'#g\' )"/></svg>');
+    expect(await code(catalog.setLogo('v', gradient, 'svg'))).toBe('OK');
   });
 
   it('ignores corrupted user templates', async () => {

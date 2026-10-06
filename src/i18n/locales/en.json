@@ -7,6 +7,7 @@
     "folderTaken": "A folder named \"{slug}\" already exists",
     "logoType": "The logo must be a PNG, JPG or SVG file",
     "logoTooLarge": "The logo is larger than 2 MB",
+    "logoExternal": "The SVG logo refers to other files: embed every image in the SVG",
     "zipInvalid": "The file is not a valid zip archive",
     "zipNoTemplate": "The zip archive does not contain template.json",
     "zipBadJson": "template.json is not valid JSON",

@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, dirname, extname, join, resolve, sep } from 'node:path';
-import { Catalog } from './catalog.js';
+import { Catalog, isSelfContainedSvg } from './catalog.js';
 import { defaultTemplateRef } from './config.js';
 import { assertDeps } from './deps.js';
 import { buildReferenceDocx, finalizeDocx } from './docx.js';
@@ -177,6 +177,10 @@ export async function render(req: RenderRequest): Promise<RenderResult> {
   await assertDeps();
   const meta = readFrontmatter(req.markdown);
   const eff = resolveOptions(req.template, meta, req.overrides ?? {});
+  // Also covers a logo copied into the template folder by hand, which skipped the catalog checks.
+  if (req.logoPath && extname(req.logoPath).toLowerCase() === '.svg' && !isSelfContainedSvg(await readFile(req.logoPath))) {
+    throw new MdpressError('errors.logoExternal', 'BAD_INPUT');
+  }
   const work = await mkdtemp(join(tmpdir(), 'mdpress-'));
   try {
     await writeFile(join(work, 'input.md'), req.markdown);
