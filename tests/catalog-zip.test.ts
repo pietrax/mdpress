@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import JSZip from 'jszip';
 import { Catalog } from '../src/core/catalog.js';
 import { builtinTemplatesDir } from '../src/core/paths.js';
-import { makePng, tempDir } from './helpers.js';
+import { makePng, svgLinking, tempDir } from './helpers.js';
 
 let catalog: Catalog;
 beforeEach(async () => {
@@ -49,6 +49,15 @@ it('a logo referenced but missing from the zip is cleared', async () => {
   zip.file('template.json', JSON.stringify({ slug: 'nologo', name: 'No logo', logo: { file: 'logo.png' } }));
   const imported = await catalog.importZip(await zip.generateAsync({ type: 'nodebuffer' }));
   expect(imported.template.logo.file).toBeNull();
+});
+
+it('rejects a logo that is not an image or an SVG that refers to other files', async () => {
+  for (const [file, data] of [['logo.svg', svgLinking('../../secret.png')], ['logo.png', Buffer.from('text')]] as const) {
+    const zip = new JSZip();
+    zip.file('template.json', JSON.stringify({ slug: 'evil', name: 'Evil', logo: { file } }));
+    zip.file(file, data);
+    expect(await code(catalog.importZip(await zip.generateAsync({ type: 'nodebuffer' })))).toBe('BAD_INPUT');
+  }
 });
 
 it('rejects non-zip files, zips without template.json and broken JSON', async () => {
