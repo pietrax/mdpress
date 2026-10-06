@@ -16,7 +16,7 @@ const fontName = z.string().min(1).max(100);
 const SlotSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('empty') }),
   z.object({ type: z.literal('logo') }),
-  z.object({ type: z.literal('text'), value: z.string().max(200) }),
+  z.object({ type: z.literal('text'), value: z.string().max(500) }),
 ]);
 
 const BandSchema = z.object({

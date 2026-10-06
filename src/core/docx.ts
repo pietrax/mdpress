@@ -177,7 +177,8 @@ function isBlank(slot: Slot, ctx: DocxContext): boolean {
 }
 
 function textRun(text: string, rPr: string): string {
-  return `<w:r>${rPr}<w:t xml:space="preserve">${xmlEscape(text)}</w:t></w:r>`;
+  const lines = text.split(/\r?\n/).map((line) => `<w:t xml:space="preserve">${xmlEscape(line)}</w:t>`);
+  return `<w:r>${rPr}${lines.join('<w:br/>')}</w:r>`;
 }
 
 function slotRuns(value: string, ctx: DocxContext, rPr: string): string {

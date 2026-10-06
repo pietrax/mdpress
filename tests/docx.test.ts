@@ -88,6 +88,13 @@ describe('buildReferenceDocx', () => {
     expect(header).toContain('Ada &lt;Lovelace&gt;');
   });
 
+  it('line breaks in band text become Word line breaks', async () => {
+    const { text } = await build({ footer: { center: { type: 'text', value: 'ACME S.r.l.\nVia Roma 1\r\n{title}' } } });
+    const footer = await text('word/footer1.xml');
+    expect(footer).toContain('ACME S.r.l.</w:t><w:br/><w:t xml:space="preserve">Via Roma 1</w:t><w:br/>');
+    expect(footer).toContain('Report &amp; co');
+  });
+
   it('sectPr: A4, margins in twips, titlePg with skipFirstPage', async () => {
     const { text } = await build({ footer: { skipFirstPage: true } });
     const doc = await text('word/document.xml');

@@ -63,8 +63,8 @@ export function SlotInput({ value, onChange, hasLogo }: { value: Slot; onChange(
         </option>
       </select>
       {value.type === 'text' && (
-        <input
-          type="text"
+        <textarea
+          rows={Math.max(1, value.value.split('\n').length)}
           value={value.value}
           placeholder={tr('web.fields.slotPlaceholder')}
           onChange={(e) => onChange({ type: 'text', value: e.target.value })}
