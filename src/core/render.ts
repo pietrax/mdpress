@@ -120,10 +120,25 @@ async function renderTypst(req: RenderRequest, eff: EffectiveOptions, work: stri
   return { data: await readFile(join(work, out)), warnings: collectWarnings(pandoc.stderr, typst.stderr) };
 }
 
+/** Word needs a raster fallback next to an SVG: Typst renders it to PNG at print resolution. */
+async function rasterizeSvg(svgPath: string, heightMm: number, work: string): Promise<string> {
+  await writeFile(join(work, 'logo.svg'), await readFile(svgPath));
+  await writeFile(join(work, 'logo.typ'), `#set page(width: auto, height: auto, margin: 0pt, fill: none)\n#image("logo.svg", height: ${heightMm}mm)\n`);
+  await run('typst', ['compile', 'logo.typ', 'logo.png', '--format', 'png', '--ppi', '300'], { cwd: work });
+  return join(work, 'logo.png');
+}
+
 async function renderDocx(req: RenderRequest, meta: DocMeta, eff: EffectiveOptions, work: string) {
   const template = req.template;
-  const logo = req.logoPath
-    ? { data: await readFile(req.logoPath), ext: extname(req.logoPath).slice(1).toLowerCase() === 'png' ? ('png' as const) : ('jpg' as const) }
+  const ext = req.logoPath ? extname(req.logoPath).slice(1).toLowerCase() : null;
+  // The PNG rendering of an SVG logo stands in for it everywhere pandoc and older Word versions need a raster.
+  const rasterLogoPath = req.logoPath && ext === 'svg' ? await rasterizeSvg(req.logoPath, template.logo.height * 2, work) : req.logoPath;
+  const logo = rasterLogoPath
+    ? {
+        data: await readFile(rasterLogoPath),
+        ext: ext === 'jpg' ? ('jpg' as const) : ('png' as const),
+        svg: ext === 'svg' && req.logoPath ? await readFile(req.logoPath) : undefined,
+      }
     : null;
   const reference = await buildReferenceDocx(await defaultReferenceDocx(), {
     template,
@@ -146,7 +161,7 @@ async function renderDocx(req: RenderRequest, meta: DocMeta, eff: EffectiveOptio
     env: {
       MDPRESS_COVER: eff.cover ? '1' : '',
       MDPRESS_TOC: eff.toc ? '1' : '',
-      MDPRESS_LOGO: eff.cover && template.cover.showLogo && req.logoPath ? req.logoPath : '',
+      MDPRESS_LOGO: eff.cover && template.cover.showLogo && rasterLogoPath ? rasterLogoPath : '',
       MDPRESS_LOGO_HEIGHT: `${template.logo.height * 2}mm`,
       MDPRESS_FIELDS: template.cover.fields.length > 0 ? template.cover.fields.join(',') : 'none',
       MDPRESS_FALLBACK_TITLE: req.fallbackTitle,

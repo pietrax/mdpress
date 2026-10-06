@@ -81,6 +81,7 @@ fieldset.form { border: 1px solid var(--border); margin: 0; min-width: 0; }
 .band { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
 .slot { display: flex; gap: 6px; }
 .slot select { width: auto; }
+.slot textarea { resize: vertical; }
 .color { display: flex; gap: 6px; align-items: center; }
 .color input[type='color'] { width: 40px; height: 32px; padding: 2px; }
 .logo-box { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }

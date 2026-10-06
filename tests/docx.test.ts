@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import JSZip from 'jszip';
 import { buildReferenceDocx, finalizeDocx, xmlEscape, type DocxContext } from '../src/core/docx.js';
 import { parseTemplate } from '../src/core/theme.js';
-import { makePng, unzipText } from './helpers.js';
+import { makePng, SVG_LOGO, unzipText } from './helpers.js';
 
 async function minimalBase(): Promise<Buffer> {
   const zip = new JSZip();
@@ -88,6 +88,13 @@ describe('buildReferenceDocx', () => {
     expect(header).toContain('Ada &lt;Lovelace&gt;');
   });
 
+  it('line breaks in band text become Word line breaks', async () => {
+    const { text } = await build({ footer: { center: { type: 'text', value: 'ACME S.r.l.\nVia Roma 1\r\n{title}' } } });
+    const footer = await text('word/footer1.xml');
+    expect(footer).toContain('ACME S.r.l.</w:t><w:br/><w:t xml:space="preserve">Via Roma 1</w:t><w:br/>');
+    expect(footer).toContain('Report &amp; co');
+  });
+
   it('sectPr: A4, margins in twips, titlePg with skipFirstPage', async () => {
     const { text } = await build({ footer: { skipFirstPage: true } });
     const doc = await text('word/document.xml');
@@ -122,6 +129,21 @@ describe('buildReferenceDocx', () => {
     const header = await text('word/header1.xml');
     expect(header).toContain('cy="432000"');
     expect(header).toContain('cx="1296000"');
+  });
+
+  it('SVG logo: PNG fallback plus the SVG through the Office svgBlip extension', async () => {
+    const { docx, text } = await build(
+      { header: { center: { type: 'logo' } } },
+      { logo: { data: makePng(30, 10), ext: 'png', svg: SVG_LOGO } },
+    );
+    const zip = await JSZip.loadAsync(docx);
+    expect(zip.file('word/media/mdpress-logo.png')).not.toBeNull();
+    expect(await zip.file('word/media/mdpress-logo.svg')?.async('string')).toContain('<svg');
+    const rels = await text('word/_rels/header1.xml.rels');
+    expect(rels).toContain('Target="media/mdpress-logo.png"');
+    expect(rels).toContain('Target="media/mdpress-logo.svg"');
+    expect(await text('[Content_Types].xml')).toContain('<Default Extension="svg" ContentType="image/svg+xml"/>');
+    expect(await text('word/header1.xml')).toMatch(/<a:blip r:embed="rIdMdpressLogo"><a:extLst><a:ext uri="\{96DAC541-7B7A-43D3-8B79-37D633B846F1\}"><asvg:svgBlip [^>]*r:embed="rIdMdpressLogoSvg"\/>/);
   });
 
   it('with a cover the title is spaced out and the table of contents starts a new page', async () => {

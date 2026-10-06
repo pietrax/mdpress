@@ -57,7 +57,7 @@ export async function buildServer(opts: { catalog?: Catalog; language?: Language
   let fonts: Promise<string[]> | null = null;
 
   app.addContentTypeParser(
-    ['image/png', 'image/jpeg', 'application/zip', 'application/octet-stream'],
+    ['image/png', 'image/jpeg', 'image/svg+xml', 'application/zip', 'application/octet-stream'],
     { parseAs: 'buffer' },
     (_req, body, done) => done(null, body),
   );
@@ -128,7 +128,7 @@ export async function buildServer(opts: { catalog?: Catalog; language?: Language
 
   app.put<{ Params: { ref: string } }>('/api/templates/:ref/logo', { bodyLimit: 2 * 1024 * 1024 }, async (req) => {
     const type = req.headers['content-type'] ?? '';
-    const ext = type.startsWith('image/png') ? 'png' : type.startsWith('image/jpeg') ? 'jpg' : null;
+    const ext = type.startsWith('image/png') ? 'png' : type.startsWith('image/jpeg') ? 'jpg' : type.startsWith('image/svg+xml') ? 'svg' : null;
     if (!ext || !Buffer.isBuffer(req.body)) throw new MdpressError('errors.logoUpload', 'BAD_INPUT');
     return summary(await catalog.setLogo(req.params.ref, req.body, ext));
   });
@@ -136,7 +136,10 @@ export async function buildServer(opts: { catalog?: Catalog; language?: Language
   app.get<{ Params: { ref: string } }>('/api/templates/:ref/logo', async (req, reply) => {
     const entry = await catalog.resolve(req.params.ref);
     if (!entry.logoPath) throw new MdpressError('errors.noLogo', 'TEMPLATE_NOT_FOUND');
-    return reply.type(entry.logoPath.endsWith('.png') ? 'image/png' : 'image/jpeg').send(await readFile(entry.logoPath));
+    const type = entry.logoPath.endsWith('.png') ? 'image/png' : entry.logoPath.endsWith('.svg') ? 'image/svg+xml' : 'image/jpeg';
+    // An SVG can carry scripts: opened directly, it must not run anything on this origin.
+    if (type === 'image/svg+xml') reply.header('content-security-policy', "default-src 'none'; style-src 'unsafe-inline'; sandbox");
+    return reply.type(type).send(await readFile(entry.logoPath));
   });
 
   app.get<{ Params: { ref: string } }>('/api/templates/:ref/thumbnail.png', async (req, reply) => {

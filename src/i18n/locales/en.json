@@ -5,7 +5,7 @@
     "templateReadonly": "\"{name}\" is a built-in template: duplicate it to edit it",
     "slugTaken": "A template with slug \"{slug}\" already exists",
     "folderTaken": "A folder named \"{slug}\" already exists",
-    "logoType": "The logo must be a PNG or JPG file",
+    "logoType": "The logo must be a PNG, JPG or SVG file",
     "logoTooLarge": "The logo is larger than 2 MB",
     "zipInvalid": "The file is not a valid zip archive",
     "zipNoTemplate": "The zip archive does not contain template.json",
@@ -22,7 +22,7 @@
     "languageMissing": "--lang needs a value ({supported})",
     "portInvalid": "Invalid port: {port}",
     "portInUse": "Port {port} is already in use: try --port {next}",
-    "logoUpload": "Upload a PNG or JPG logo",
+    "logoUpload": "Upload a PNG, JPG or SVG logo",
     "noLogo": "This template has no logo",
     "zipUpload": "Upload a .zip file",
     "markdownMissing": "Markdown is missing",
@@ -43,7 +43,7 @@
     "color": "invalid hex color (#rrggbb)",
     "slug": "invalid slug: only a-z, 0-9 and hyphens",
     "id": "invalid id",
-    "logoFile": "the logo must be named logo.png or logo.jpg",
+    "logoFile": "the logo must be named logo.png, logo.jpg or logo.svg",
     "oneOf": "allowed values: {values}",
     "invalid": "invalid value"
   },
@@ -148,7 +148,7 @@
     "errors": {
       "http": "Error {status}",
       "network": "Cannot reach the server",
-      "logoType": "The logo must be a PNG or JPG",
+      "logoType": "The logo must be a PNG, JPG or SVG",
       "unsavedChanges": "You have unsaved changes. Leave anyway?"
     },
     "convert": {
@@ -225,7 +225,7 @@
       "numberedHeadings": "Numbered headings (1, 1.1, 1.1.1)",
       "logo": "Logo",
       "noLogo": "No logo",
-      "uploadLogo": "Upload PNG/JPG",
+      "uploadLogo": "Upload PNG/JPG/SVG",
       "removeLogo": "Remove",
       "logoHeight": "Logo height in the header (mm)",
       "logoHeightHint": "On the cover the logo is twice as tall",

@@ -8,7 +8,8 @@ export interface DocxContext {
   template: Template;
   meta: DocMeta & { title: string };
   cover: boolean;
-  logo: { data: Buffer; ext: 'png' | 'jpg' } | null;
+  /** Raster logo; for an SVG logo `data` is its PNG rendering and `svg` the original, which Word prefers. */
+  logo: { data: Buffer; ext: 'png' | 'jpg'; svg?: Buffer } | null;
 }
 
 const PART_NS =
@@ -19,6 +20,9 @@ const PART_NS =
   'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"';
 const REL_TYPE = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
 const LOGO_REL_ID = 'rIdMdpressLogo';
+const LOGO_SVG_REL_ID = 'rIdMdpressLogoSvg';
+/** Office 2016+ extension: the SVG to draw, with the r:embed PNG as fallback for older readers. */
+const SVG_BLIP_EXT = '{96DAC541-7B7A-43D3-8B79-37D633B846F1}';
 const PROOFING: Record<Language, string> = { en: 'en-US', it: 'it-IT' };
 
 export function xmlEscape(s: string): string {
@@ -177,7 +181,8 @@ function isBlank(slot: Slot, ctx: DocxContext): boolean {
 }
 
 function textRun(text: string, rPr: string): string {
-  return `<w:r>${rPr}<w:t xml:space="preserve">${xmlEscape(text)}</w:t></w:r>`;
+  const lines = text.split(/\r?\n/).map((line) => `<w:t xml:space="preserve">${xmlEscape(line)}</w:t>`);
+  return `<w:r>${rPr}${lines.join('<w:br/>')}</w:r>`;
 }
 
 function slotRuns(value: string, ctx: DocxContext, rPr: string): string {
@@ -191,6 +196,15 @@ function slotRuns(value: string, ctx: DocxContext, rPr: string): string {
       return v ? textRun(v, rPr) : '';
     })
     .join('');
+}
+
+function blip(svg: boolean): string {
+  if (!svg) return `<a:blip r:embed="${LOGO_REL_ID}"/>`;
+  return (
+    `<a:blip r:embed="${LOGO_REL_ID}"><a:extLst><a:ext uri="${SVG_BLIP_EXT}">` +
+    `<asvg:svgBlip xmlns:asvg="http://schemas.microsoft.com/office/drawing/2016/SVG/main" r:embed="${LOGO_SVG_REL_ID}"/>` +
+    '</a:ext></a:extLst></a:blip>'
+  );
 }
 
 /** 1 twip = 635 EMU. */
@@ -210,7 +224,7 @@ function logoDrawing(logo: NonNullable<DocxContext['logo']>, heightMm: number, d
     `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/>` +
     `<wp:docPr id="${docPrId}" name="mdpress-logo"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">` +
     `<pic:pic><pic:nvPicPr><pic:cNvPr id="${docPrId}" name="logo"/><pic:cNvPicPr/></pic:nvPicPr>` +
-    `<pic:blipFill><a:blip r:embed="${LOGO_REL_ID}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>` +
+    `<pic:blipFill>${blip(Boolean(logo.svg))}<a:stretch><a:fillRect/></a:stretch></pic:blipFill>` +
     `<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>` +
     '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>'
   );
@@ -296,7 +310,9 @@ export async function buildReferenceDocx(base: Buffer, ctx: DocxContext): Promis
   const ext = ctx.logo?.ext ?? 'png';
   const logoRels =
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
-    `<Relationship Id="${LOGO_REL_ID}" Type="${REL_TYPE}/image" Target="media/mdpress-logo.${ext}"/></Relationships>`;
+    `<Relationship Id="${LOGO_REL_ID}" Type="${REL_TYPE}/image" Target="media/mdpress-logo.${ext}"/>` +
+    (ctx.logo?.svg ? `<Relationship Id="${LOGO_SVG_REL_ID}" Type="${REL_TYPE}/image" Target="media/mdpress-logo.svg"/>` : '') +
+    '</Relationships>';
   let logoUsed = false;
 
   const parts = [
@@ -323,6 +339,12 @@ export async function buildReferenceDocx(base: Buffer, ctx: DocxContext): Promis
     zip.file(`word/media/mdpress-logo.${ext}`, ctx.logo.data);
     if (!new RegExp(`Extension="${ext}"`, 'i').test(types)) {
       types = types.replace('</Types>', () => `<Default Extension="${ext}" ContentType="${ext === 'png' ? 'image/png' : 'image/jpeg'}"/></Types>`);
+    }
+    if (ctx.logo.svg) {
+      zip.file('word/media/mdpress-logo.svg', ctx.logo.svg);
+      if (!/Extension="svg"/i.test(types)) {
+        types = types.replace('</Types>', () => '<Default Extension="svg" ContentType="image/svg+xml"/></Types>');
+      }
     }
   }
   zip.file('word/_rels/document.xml.rels', rels);

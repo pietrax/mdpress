@@ -29,8 +29,9 @@ async function exists(path: string): Promise<boolean> {
   }
 }
 
-function isImage(data: Buffer, ext: 'png' | 'jpg'): boolean {
+function isImage(data: Buffer, ext: 'png' | 'jpg' | 'svg'): boolean {
   if (ext === 'png') return data.subarray(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+  if (ext === 'svg') return /^(?:\uFEFF)?\s*(?:<\?xml[^>]*>\s*)?(?:<!--[\s\S]*?-->\s*|<!DOCTYPE[^>]*>\s*)*<svg[\s>]/i.test(data.subarray(0, 4096).toString('utf8'));
   return data.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]));
 }
 
@@ -100,7 +101,7 @@ export class Catalog {
   async setLogo(ref: string, data: Buffer, ext: string): Promise<CatalogEntry> {
     const entry = await this.writable(ref);
     const normalized = ext.toLowerCase() === 'jpeg' ? 'jpg' : ext.toLowerCase();
-    if ((normalized !== 'png' && normalized !== 'jpg') || !isImage(data, normalized)) {
+    if ((normalized !== 'png' && normalized !== 'jpg' && normalized !== 'svg') || !isImage(data, normalized)) {
       throw new MdpressError('errors.logoType', 'BAD_INPUT');
     }
     if (data.length > 2 * 1024 * 1024) {

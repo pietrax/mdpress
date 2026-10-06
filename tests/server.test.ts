@@ -6,7 +6,7 @@ import { Catalog } from '../src/core/catalog.js';
 import { readConfig, writeConfig } from '../src/core/config.js';
 import { builtinTemplatesDir } from '../src/core/paths.js';
 import { t } from '../src/i18n/index.js';
-import { hasTools, makePng, tempDir } from './helpers.js';
+import { hasTools, makePng, SVG_LOGO, tempDir } from './helpers.js';
 
 let app: FastifyInstance;
 const H = { 'x-mdpress': '1' };
@@ -105,6 +105,16 @@ describe('templates', () => {
     expect(img.headers['content-type']).toBe('image/png');
     const bad = await app.inject({ method: 'PUT', url: '/api/templates/l/logo', headers: { ...H, 'content-type': 'image/png' }, payload: Buffer.from('no') });
     expect(bad.statusCode).toBe(400);
+  });
+
+  it('logo: SVG upload, served with a restrictive content security policy', async () => {
+    await app.inject({ method: 'POST', url: '/api/templates', headers: H, payload: { slug: 's', name: 'S' } });
+    const up = await app.inject({ method: 'PUT', url: '/api/templates/s/logo', headers: { ...H, 'content-type': 'image/svg+xml' }, payload: SVG_LOGO });
+    expect(up.json()).toMatchObject({ hasLogo: true, logo: { file: 'logo.svg' } });
+    const img = await app.inject({ method: 'GET', url: '/api/templates/s/logo' });
+    expect(img.headers['content-type']).toBe('image/svg+xml');
+    expect(img.headers['content-security-policy']).toContain("default-src 'none'");
+    expect(img.body).toContain('<svg');
   });
 
   it('export → import', async () => {
