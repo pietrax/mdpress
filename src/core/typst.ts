@@ -174,6 +174,10 @@ export function buildTypstTemplate(ctx: TypstContext): string {
     quote,
     `#set table(inset: 6pt, stroke: 0.5pt + rgb("${lighten(c.muted, 0.5)}")${striped})`,
     '#show figure.where(kind: table): set figure.caption(position: top)',
+    // Pandoc wraps tables in figure(align(center)[table(align: auto…)]): let them break across
+    // pages, and left-align cells that Markdown leaves without an explicit alignment.
+    '#show figure.where(kind: table): set block(breakable: true)',
+    '#show table.cell.where(align: auto): set align(start)',
     ctx.cover ? coverPage(ctx) : titleBlock(ctx),
     ctx.toc ? '#outline(depth: 3)\n#pagebreak(weak: true)' : '',
     '$body$',

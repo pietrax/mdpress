@@ -32,6 +32,12 @@ describe('textContent', () => {
 });
 
 describe('buildTypstTemplate', () => {
+  it('lets tables break across pages and left-aligns cells without explicit alignment', () => {
+    const out = buildTypstTemplate(ctx());
+    expect(out).toContain('#show figure.where(kind: table): set block(breakable: true)');
+    expect(out).toContain('#show table.cell.where(align: auto): set align(start)');
+  });
+
   it('standard: portrait A4, footer with page number, no header or cover', () => {
     const out = buildTypstTemplate(ctx());
     expect(out).toContain('paper: "a4"');
